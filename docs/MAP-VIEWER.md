@@ -71,7 +71,7 @@ Trigger: an **Upload** button on each Atlas panel row (next to Set current / Gen
 1. Read the chosen file into an `Image`/`createImageBitmap`.
 2. Render to an offscreen `<canvas>` and produce **two** WebP blobs via `canvas.toBlob(..., 'image/webp', q)`:
    - **Full:** downscale so the longest side ≤ 2400px, quality ~0.9. (Keeps storage/egress sane; finished collage PNGs are multi-MB.)
-   - **Thumb:** longest side ~400px, quality ~0.7 (~30–50 KB).
+   - **Thumb:** longest side ~600px, quality ~0.8 (~60–90 KB).
 3. Upload both with `sb.storage.from('panels').upload(key, blob, { upsert: true, contentType: 'image/webp' })`.
 4. Record `{ path, thumbPath, w, h, bytes, uploadedAt: new Date().toISOString() }` onto `panel.images[String(panel.gen)]` (the panel's **current** generation).
 5. `persist()` — JSON syncs the paths.

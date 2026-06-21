@@ -866,7 +866,7 @@ async function processImage(file){
     cv.getContext('2d').drawImage(bmp,0,0,cw,ch);
     return new Promise(res=>cv.toBlob(b=>res({blob:b,w:cw,h:ch}),'image/webp',q));
   };
-  const full=await make(2400,0.9), thumb=await make(400,0.7);
+  const full=await make(2400,0.9), thumb=await make(600,0.8);
   if(bmp.close) bmp.close();
   return {full,thumb};
 }
@@ -919,7 +919,7 @@ async function signedUrl(path){
 }
 
 let mapGen=null, mapView={scale:1,x:0,y:0}, mapViewInit=false, mapObserver=null, mapWired=false;
-const MAP_CW=128, MAP_CH=160, MAP_GAP=16;   // cells match the 8×10 (4:5 portrait) panel format
+const MAP_CW=128, MAP_CH=160, MAP_GAP=8;   // cells match the 8×10 (4:5 portrait) panel format
 function applyMapTransform(){ const c=document.getElementById('mapCanvas'); if(c) c.style.transform='translate('+mapView.x+'px,'+mapView.y+'px) scale('+mapView.scale+')'; }
 function centerMap(){
   const stage=document.getElementById('mapStage'), c=document.getElementById('mapCanvas'); if(!stage||!c) return;
