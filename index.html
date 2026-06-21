@@ -211,7 +211,7 @@
   .map-cell.has-img{cursor:pointer;border-color:var(--ash-dim)}
   .map-cell.has-img:hover{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
   .map-cell.current{border-color:var(--gold)}
-  .map-cell img{width:100%;height:100%;object-fit:cover;display:block}
+  .map-cell img{width:100%;height:100%;object-fit:contain;display:block}
   .map-cell .ph{text-align:center;padding:6px;font-family:var(--mono);color:var(--ash-dim);letter-spacing:1px;user-select:none}
   .map-cell .ph .co{font-size:11px;color:var(--ash)}
   .map-cell .ph .te{font-size:8px;text-transform:uppercase;margin-top:3px}
@@ -919,7 +919,7 @@ async function signedUrl(path){
 }
 
 let mapGen=null, mapView={scale:1,x:0,y:0}, mapViewInit=false, mapObserver=null, mapWired=false;
-const MAP_CELL=120, MAP_GAP=14;
+const MAP_CW=128, MAP_CH=160, MAP_GAP=16;   // cells match the 8×10 (4:5 portrait) panel format
 function applyMapTransform(){ const c=document.getElementById('mapCanvas'); if(c) c.style.transform='translate('+mapView.x+'px,'+mapView.y+'px) scale('+mapView.scale+')'; }
 function centerMap(){
   const stage=document.getElementById('mapStage'), c=document.getElementById('mapCanvas'); if(!stage||!c) return;
@@ -950,16 +950,16 @@ function renderMap(){
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   const pos=S.panels.map(p=>{ const c=parseCoord(p.coord); const x=(c.ed==='W'?-c.em:c.em), y=-(c.nd==='S'?-c.nm:c.nm);
     minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y); return {p,x,y}; });
-  const cols=maxX-minX+1, rows=maxY-minY+1, step=MAP_CELL+MAP_GAP, en=imagesEnabled();
-  canvas.style.width=(cols*step-MAP_GAP)+'px'; canvas.style.height=(rows*step-MAP_GAP)+'px';
+  const cols=maxX-minX+1, rows=maxY-minY+1, stepX=MAP_CW+MAP_GAP, stepY=MAP_CH+MAP_GAP, en=imagesEnabled();
+  canvas.style.width=(cols*stepX-MAP_GAP)+'px'; canvas.style.height=(rows*stepY-MAP_GAP)+'px';
   canvas.innerHTML=pos.map(({p,x,y})=>{
-    const gx=(x-minX)*step, gy=(y-minY)*step;
+    const gx=(x-minX)*stepX, gy=(y-minY)*stepY;
     const ig=latestImageAtGen(p,mapGen), showImg=en && ig!=null, rec=showImg?p.images[String(ig)]:null;
     const cls='map-cell'+(showImg?' has-img':'')+(p.coord===S.currentPanel?' current':'');
     const inner=rec
       ? `<div class="ph" data-thumb="${esc(rec.thumbPath)}"><span class="co">${esc(p.coord)}</span></div><div class="gtag">gen ${ig}</div>`
       : `<div class="ph"><span class="co">${esc(p.coord)}</span><span class="te">${esc(p.terrain)}</span></div>`;
-    return `<div class="${cls}" style="left:${gx}px;top:${gy}px;width:${MAP_CELL}px;height:${MAP_CELL}px" data-coord="${esc(p.coord)}">${inner}</div>`;
+    return `<div class="${cls}" style="left:${gx}px;top:${gy}px;width:${MAP_CW}px;height:${MAP_CH}px" data-coord="${esc(p.coord)}">${inner}</div>`;
   }).join('');
   if(en && 'IntersectionObserver' in window){
     mapObserver=new IntersectionObserver(es=>{ es.forEach(async ent=>{
