@@ -44,13 +44,15 @@ S = {
 ```
 
 ### Card schema
-`{ id, title, category, number(=steps), color('black'|'red'), instruction, traits[], roll('d10'…), space(bool), smin, smax, make(bool), cap(''|capture-type override), status, drawn }`
+`{ id, title, category, number(=steps), color('black'|'red'), instruction, traits[], roll('d10'…), space(bool), smin, smax, make(bool), cap(''|capture-type override), tier, volatile(bool), status, drawn }`
 
 - `category`: foundation | terrain | develop | art | discovery | hero | event | lore | meta | force
 - `number` = **Steps** (how many panels you move when travelling); `color` = direction (black clockwise, red counter).
 - `space` cards roll **Sectors** in `[smin, smax]` (panel is an 80-sector grid).
 - `make:true` (the "New Law" card) shows an inline card-forge with randomized kind/steps/ink.
 - `cap` overrides the category's default capture type (e.g. a lore-category card with `cap:'rule'`).
+- `tier`: rarity in `TIER_META` (common 3 · uncommon 1 · rare 0.4 · fabled 0.12 · universal 0.04 — the number is the draw **weight**). `drawCard` uses `weightedPick` over the eligible pool (still with replacement). Reveal glow + deck tag are tier-colored; **red/black stay reserved for ink**, so rarity escalates on paper/border/seal (verdigris=Rare, gold=Fabled, violet=Universal).
+- `volatile:true` (Universal-origin cards): on `completeDraw`, `resolveVolatile` rolls 60/40 — 60% settles one tier toward common (more frequent, keeps the violet omen) until it stabilizes at Common; 40% is destroyed → Retired. Set tiers in `seedDeck` (by category + title overrides); `migrateCards()` backfills older saves.
 
 ### Key conventions (must stay consistent across deck, forge, and vault)
 - **Coordinates** are canonical: `N{a} E{b}` with zero-normalized direction (origin = `N0 E0`). Used as panel titles, `[[links]]`, and filenames.

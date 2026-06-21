@@ -87,6 +87,20 @@
   .roll-result.ill{border-color:var(--ember);background:linear-gradient(180deg,rgba(166,54,47,.16),rgba(166,54,47,.04))}
   .roll-result.ill .roll-val{color:var(--ember-soft)}
 
+  /* Card rarity tiers — reveal glow escalates by tier (red/black stay reserved for ink) */
+  .card-rarity{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid;border-radius:20px;padding:3px 9px;margin-left:6px;display:inline-block;vertical-align:middle}
+  .card-face.tier-common .card-rarity{color:#8a8174;border-color:#c9bda1}
+  .card-face.tier-uncommon .card-rarity{color:#6a5f49;border-color:#c9bda1}
+  .card-face.tier-rare .card-rarity{color:#3c4d43;border-color:#6f8b78}
+  .card-face.tier-fabled .card-rarity{color:#9c7a1e;border-color:#c9a24b}
+  .card-face.tier-universal .card-rarity{color:#6a4a9a;border-color:#9a6fc4}
+  .card-face.tier-uncommon{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 22px rgba(201,162,75,.16)}
+  .card-face.tier-rare{border-color:#6f8b78;box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 26px rgba(111,139,120,.5)}
+  .card-face.tier-fabled{border-color:#c9a24b;background:linear-gradient(135deg,#f3ecda,#e9dcbf);box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 34px rgba(201,162,75,.6)}
+  .card-face.tier-universal{border-color:#9a6fc4;background:linear-gradient(135deg,#ece6f2,#ddd2ea)}
+  .card-face.volatile{animation:flip .4s ease, cardPulse 2.6s .5s ease-in-out infinite}
+  @keyframes cardPulse{0%,100%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 18px rgba(168,111,208,.4)}50%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 40px rgba(168,111,208,.85)}}
+
   /* Capture */
   .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
   .capture h4{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:0 0 12px;display:flex;align-items:center;gap:8px}
@@ -124,6 +138,9 @@
   .rinstr{font-size:12px;color:var(--ash);margin-top:4px;line-height:1.45}
   .tag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-right:5px;border:1px solid var(--verd-deep);color:var(--verd)}
   .tag.cat{border-color:var(--ash-dim);color:var(--ash)}.tag.gold{border-color:var(--gold);color:var(--gold)}.tag.sp{border-color:var(--ember-soft);color:var(--ember-soft)}
+  .tag.tier.common{border-color:var(--ash-dim);color:var(--ash)}.tag.tier.uncommon{border-color:#6a5f49;color:var(--bone-dim)}
+  .tag.tier.rare{border-color:var(--verd);color:var(--verd)}.tag.tier.fabled{border-color:var(--gold);color:var(--gold)}
+  .tag.tier.universal{border-color:#9a6fc4;color:#b48fe0}
   .rowacts{display:flex;gap:6px}
   .mini{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-radius:4px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ash)}
   .mini:hover{color:var(--bone);border-color:var(--ash-dim)}
@@ -358,6 +375,15 @@
         <div class="field"><label>Steps (move distance)</label><input type="text" id="fNum" placeholder="2" inputmode="numeric"></div>
         <div class="field"><label>Ink / direction</label><select id="fColor"><option value="black">Black · clockwise</option><option value="red">Red · counter-clockwise</option></select></div>
       </div>
+      <div class="field"><label>Rarity</label>
+        <select id="fTier">
+          <option value="common">Common — surfaces often</option>
+          <option value="uncommon" selected>Uncommon — baseline</option>
+          <option value="rare">Rare — a treat</option>
+          <option value="fabled">Fabled — once in a world</option>
+          <option value="universal">Universal — volatile: settles toward common, or is destroyed</option>
+        </select>
+      </div>
       <div class="field"><label>Instruction</label><textarea id="fInstr" placeholder="What the explorer does when this turns up."></textarea></div>
       <div class="field"><label>Traits</label>
         <div class="checks">
@@ -537,6 +563,18 @@ function flag(t){document.getElementById('saveFlag').textContent=t;}
 
 /* ===== constants ===== */
 const CATLABEL={foundation:"Foundation",terrain:"Terrain",develop:"Develop",art:"Art",discovery:"Discovery",hero:"Hero",event:"Event",lore:"Lore",meta:"Meta",force:"Force"};
+// Rarity tiers — ordered common→rarest. weight = relative draw odds (with replacement).
+const TIERS=['common','uncommon','rare','fabled','universal'];
+const TIER_META={
+  common:   {label:'Common',    weight:3},
+  uncommon: {label:'Uncommon',  weight:1},
+  rare:     {label:'Rare',      weight:0.4},
+  fabled:   {label:'Fabled',    weight:0.12},
+  universal:{label:'Universal', weight:0.04}
+};
+function tierOf(c){ return (c && TIER_META[c.tier]) ? c.tier : 'uncommon'; }
+function displayTier(c){ return c && c.volatile ? 'universal' : tierOf(c); }   // volatile cards keep the Universal omen while they climb
+function cardWeight(c){ return TIER_META[tierOf(c)].weight; }                   // weight follows the current (climbing) tier
 const POP_TIERS=[['Camp',400],['Holdfast',800],['Reach',1200],['Bastion',2400]];
 const TERRAINS=['Ruins','Scarred','Drowned','Wilds','Other'];
 const THEMES=['Creation','Destruction','Faith','History','Prophecy','Betrayal','Relic','Other'];
@@ -577,7 +615,7 @@ function nextTier(n){const i=tierIndex(n);return i>=0&&i<POP_TIERS.length-1?POP_
 /* ===== seed deck ===== */
 function seedDeck(){
   const c=(title,category,number,color,instruction,o={})=>Object.assign({id:uid(),title,category,number,color,instruction,traits:o.traits||[],roll:o.roll||'',space:!!o.space,smin:o.smin||1,smax:o.smax||80,make:!!o.make,cap:o.cap||'',status:'active',drawn:0});
-  return [
+  const _deck=[
     c("Forgotten Ground","foundation",2,"black","Found a new panel from the ruins of a forgotten past."),
     c("Scarred Earth","foundation",2,"red","Found a new panel of blasted, barren, irradiated land."),
     c("The Drowned","foundation",3,"red","Found a new panel claimed by water — flooded city, swollen river, new coast."),
@@ -636,6 +674,11 @@ function seedDeck(){
     c("A Myth","lore",1,"black","Write a myth — a story the world tells to explain itself.",{traits:['lore'],cap:'lore'}),
     c("Something Otherworldly","lore",2,"red","Record an otherworldly event — gods walking the earth, visitors from beyond, mythic beasts, giants risen.",{traits:['lore'],cap:'lore'}),
   ];
+  // Sensible starting tiers: workhorses common, flavor uncommon, momentous rare, the mythic fabled. Tweak any in the card editor.
+  const TIER_BY_CAT={foundation:'common',terrain:'common',develop:'common',art:'uncommon',discovery:'uncommon',lore:'uncommon',hero:'rare',event:'rare',meta:'rare',force:'fabled'};
+  const TIER_OVERRIDE={'Something Otherworldly':'fabled','A Tragedy':'rare','A Religion Takes Hold':'rare'};
+  _deck.forEach(c=>{ c.tier = TIER_OVERRIDE[c.title] || TIER_BY_CAT[c.category] || 'uncommon'; c.volatile = (c.tier==='universal'); });
+  return _deck;
 }
 
 /* ===== state ===== */
@@ -650,11 +693,21 @@ async function boot(){
   else { S.deck=seedDeck(); await persist(); }
   S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
   S.panels.forEach(p=>{ p.images=p.images||{}; });
+  migrateCards();
   pickQuote();
   renderAll();
   initCloud();
 }
 async function persist(){ await Store.save(S); scheduleCloudPush(); }
+// Backfill rarity on older saves: existing cards get their sensible starting tier by title, custom cards default to Uncommon.
+function migrateCards(){
+  const seedTiers=Object.fromEntries(seedDeck().map(c=>[c.title,c.tier]));
+  [...(S.deck||[]),...(S.archive||[])].forEach(c=>{
+    if(!c.tier) c.tier = seedTiers[c.title] || 'uncommon';
+    if(!TIER_META[c.tier]) c.tier='uncommon';
+    if(c.volatile===undefined) c.volatile = (c.tier==='universal');
+  });
+}
 
 /* ===== Cloud sync (Supabase) — optional, degrades to local-only ===== */
 const CFG = window.SORTIS_CONFIG || {};
@@ -676,7 +729,7 @@ async function pullCloud(){
   try{
     const { data, error } = await sb.from('worlds').select('data').eq('user_id', sbUser.id).maybeSingle();
     if(error) throw error;
-    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
+    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); migrateCards(); await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
     else { await pushCloud(); } // first sign-in: seed the cloud from this device
   }catch(e){ console.warn('cloud pull failed', e); }
 }
@@ -1051,10 +1104,13 @@ function rowHTML(c,arch){
   const roll=c.roll?`<span class="tag">${c.roll}</span>`:(c.category==='event'?'<span class="tag">d10</span>':'');
   const sp=c.space?`<span class="tag sp">${c.smin}–${c.smax} sectors</span>`:'';
   const cat=`<span class="tag cat ${c.category==='hero'?'gold':''}">${CATLABEL[c.category]||c.category}</span>`;
+  const dt=displayTier(c);
+  const tier=`<span class="tag tier ${dt}">${TIER_META[dt].label}${c.volatile&&dt==='universal'&&tierOf(c)!=='universal'?' · settling':''}</span>`;
+  const gone=c.destroyed?'<span class="tag" style="border-color:var(--ember);color:var(--ember-soft)">destroyed</span>':'';
   return `<div class="row" data-id="${c.id}">
     <div class="rnum ${c.color}">${c.number}</div>
     <div><div class="rtitle">${esc(c.title)}</div>
-      <div class="rmeta">${cat}${tags}${roll}${sp}</div>
+      <div class="rmeta">${tier}${gone}${cat}${tags}${roll}${sp}</div>
       <div class="rinstr">${esc(c.instruction)}</div></div>
     <div class="rowacts">${arch?'<button class="mini" data-act="restore">Restore</button>':'<button class="mini" data-act="edit">Edit</button><button class="mini danger" data-act="retire">Retire</button>'}</div></div>`;
 }
@@ -1086,13 +1142,20 @@ function eligible(card){
     default: return true;
   }
 }
+function weightedPick(pool){
+  let total=0; for(const c of pool) total+=cardWeight(c);
+  if(total<=0) return pool[Math.floor(Math.random()*pool.length)];
+  let r=Math.random()*total;
+  for(const c of pool){ r-=cardWeight(c); if(r<0) return c; }
+  return pool[pool.length-1];
+}
 function drawCard(){
   const pool=S.deck.filter(eligible);
   if(!pool.length){
     document.getElementById('drawStage').innerHTML=`<div class="empty" style="max-width:330px">The world is empty. Forge a panel in the <b>Atlas</b>, or draw a Foundation card, before the rest of the deck can act.</div>`;
     return;
   }
-  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const pick=weightedPick(pool);
   pick.drawn=(pick.drawn||0)+1; S.meta.draws++;
   current={card:pick,year:S.meta.year,notes:[],advanced:false};
   const t=resolveTravel(pick);
@@ -1122,6 +1185,7 @@ function resolveTravel(card){
 function showCard(c){
   const stage=document.getElementById('drawStage');
   const traitSet=new Set(c.traits||[]);
+  const dt=displayTier(c);
   const dir=c.color==='red'?'Counter-clockwise':'Clockwise';
   const effRoll=c.roll||(c.category==='event'?'d10':'');
   // travel + sector banners
@@ -1153,9 +1217,9 @@ function showCard(c){
   stage.innerHTML=`
     <div class="working">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b></div>
     <div class="draw-meta">${travelHtml}${sectorHtml}</div>
-    <div class="card-face">
+    <div class="card-face tier-${dt}${c.volatile?' volatile':''}">
       <div class="card-num ${c.color}">${c.number}</div>
-      <span class="card-seal">${CATLABEL[c.category]||c.category}</span>
+      <span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span>
       <div class="card-title">${esc(c.title)}</div>
       <div class="card-instr">${esc(c.instruction)}</div>
       <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
@@ -1224,6 +1288,14 @@ function makeForgeHTML(){
       <div><label>Steps</label><input type="number" id="mkNum" value="${rs}" min="0" max="9"></div>
       <div><label>Ink</label><select id="mkColor"><option value="black" ${ri==='black'?'selected':''}>Black</option><option value="red" ${ri==='red'?'selected':''}>Red</option></select></div>
     </div>
+    <div class="cap-row"><label>Rarity</label>
+      <select id="mkTier">
+        <option value="common">Common</option>
+        <option value="uncommon" selected>Uncommon</option>
+        <option value="rare">Rare</option>
+        <option value="fabled">Fabled</option>
+        <option value="universal">Universal — volatile</option>
+      </select></div>
     <div class="cap-row"><label>Title</label><input type="text" id="mkTitle" placeholder="Name this card"></div>
     <div class="cap-row"><label>Instruction</label><textarea id="mkInstr" placeholder="What the explorer does when this turns up."></textarea></div>
     <div class="cap-row"><label>Traits</label>
@@ -1246,10 +1318,11 @@ function wireMakeForge(){
   sp.onchange=()=>{document.getElementById('mkRange').style.display=sp.checked?'grid':'none';};
   document.getElementById('mkAdd').onclick=()=>{
     const space=sp.checked;
+    const tier=val('mkTier')||'uncommon';
     const card={id:uid(),status:'active',drawn:0,
       title:val('mkTitle')||'Untitled Law',category:val('mkCat'),number:parseInt(val('mkNum'),10)||0,color:val('mkColor'),
       instruction:val('mkInstr'),traits:[].concat(document.getElementById('mkAdvance').checked?['advance']:[],document.getElementById('mkLore').checked?['lore']:[]),
-      roll:document.getElementById('mkRoll').checked?'d10':'',space,smin:space?Math.max(1,parseInt(val('mkSmin'))||1):1,smax:space?Math.min(80,parseInt(val('mkSmax'))||80):80,make:false};
+      roll:document.getElementById('mkRoll').checked?'d10':'',space,smin:space?Math.max(1,parseInt(val('mkSmin'))||1):1,smax:space?Math.min(80,parseInt(val('mkSmax'))||80):80,tier,volatile:tier==='universal',make:false};
     S.deck.push(card);
     current.madeCard=card.title;
     document.getElementById('mkMsg').textContent='Added “'+card.title+'” to the deck.';
@@ -1325,10 +1398,23 @@ function completeDraw(){
     if(cap.seqKey){S.loreSeq=S.loreSeq||{};S.loreSeq[cap.seqKey]=((S.loreSeq[cap.seqKey])||0)+1;}
     commitToWorld(cap.commit);
   }
+  if(c.volatile){ resolveVolatile(c); }   // Universal cards meet their 60/40 fate after you've used them
   S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes});
   current=null;
-  persist();renderHeader();renderAtlas();renderLog();
+  persist();renderHeader();renderAtlas();renderLog();renderDeck();renderArchive();
   resetStage();
+}
+function resolveVolatile(c){
+  if(Math.random()<0.60){                                   // 60% — settle one tier toward common (appears more often)
+    const i=TIERS.indexOf(tierOf(c)), ni=Math.max(0,i-1);
+    c.tier=TIERS[ni];
+    if(ni===0){ c.volatile=false; current.notes.unshift('✦ “'+c.title+'” settled fully — now a stable Common card.'); }
+    else current.notes.unshift('✦ “'+c.title+'” settled — it will surface more often now ('+TIER_META[c.tier].label+').');
+  } else {                                                   // 40% — destroyed → Retired (restorable)
+    const idx=S.deck.findIndex(x=>x.id===c.id);
+    if(idx>=0){ const dc=S.deck.splice(idx,1)[0]; dc.status='archived'; dc.destroyed=true; S.archive.unshift(dc); }
+    current.notes.unshift('☄ “'+c.title+'” was destroyed by its own volatility — sent to Retired.');
+  }
 }
 function commitToWorld(co){
   if(!co)return;
@@ -1356,18 +1442,20 @@ function editCard(id){const c=S.deck.find(x=>x.id===id);if(!c)return;editId=id;
   setVal('fTitle',c.title);setVal('fCat',c.category);setVal('fNum',c.number);setVal('fColor',c.color);setVal('fInstr',c.instruction);
   document.getElementById('tAdvance').checked=c.traits.includes('advance');document.getElementById('tLore').checked=c.traits.includes('lore');document.getElementById('tMeta').checked=c.traits.includes('meta');document.getElementById('tRoll').checked=!!c.roll;setVal('fRoll',c.roll||'');
   document.getElementById('tSpace').checked=!!c.space;document.getElementById('sectorRange').style.display=c.space?'grid':'none';setVal('fSmin',c.smin||1);setVal('fSmax',c.smax||80);
+  setVal('fTier',c.tier||'uncommon');
   document.getElementById('forgeTitle').textContent='Edit Card';switchView('forge');
 }
 function readForge(){const traits=[];if(document.getElementById('tAdvance').checked)traits.push('advance');if(document.getElementById('tLore').checked)traits.push('lore');if(document.getElementById('tMeta').checked)traits.push('meta');
   const space=document.getElementById('tSpace').checked;
-  return {title:val('fTitle')||'Untitled',category:val('fCat'),number:parseInt(val('fNum'),10)||0,color:val('fColor'),instruction:val('fInstr'),traits,roll:document.getElementById('tRoll').checked?val('fRoll'):'',space,smin:space?Math.max(1,parseInt(val('fSmin'))||1):1,smax:space?Math.min(80,parseInt(val('fSmax'))||80):80};
+  const tier=val('fTier')||'uncommon';
+  return {title:val('fTitle')||'Untitled',category:val('fCat'),number:parseInt(val('fNum'),10)||0,color:val('fColor'),instruction:val('fInstr'),traits,roll:document.getElementById('tRoll').checked?val('fRoll'):'',space,smin:space?Math.max(1,parseInt(val('fSmin'))||1):1,smax:space?Math.min(80,parseInt(val('fSmax'))||80):80,tier,volatile:tier==='universal'};
 }
 document.getElementById('forgeSave').onclick=()=>{const d=readForge();
   if(editId){Object.assign(S.deck.find(x=>x.id===editId),d);editId=null;document.getElementById('forgeTitle').textContent='Forge a Card';}
   else S.deck.push(Object.assign({id:uid(),status:'active',drawn:0},d));
   resetForge();persist();renderDeck();switchView('deck');};
 document.getElementById('forgeReset').onclick=()=>{editId=null;resetForge();document.getElementById('forgeTitle').textContent='Forge a Card';};
-function resetForge(){['fTitle','fNum','fInstr'].forEach(i=>setVal(i,''));setVal('fCat','foundation');setVal('fColor','black');['tAdvance','tLore','tMeta','tRoll','tSpace'].forEach(i=>document.getElementById(i).checked=false);setVal('fRoll','d10');document.getElementById('sectorRange').style.display='none';setVal('fSmin',1);setVal('fSmax',80);}
+function resetForge(){['fTitle','fNum','fInstr'].forEach(i=>setVal(i,''));setVal('fCat','foundation');setVal('fColor','black');setVal('fTier','uncommon');['tAdvance','tLore','tMeta','tRoll','tSpace'].forEach(i=>document.getElementById(i).checked=false);setVal('fRoll','d10');document.getElementById('sectorRange').style.display='none';setVal('fSmin',1);setVal('fSmax',80);}
 
 /* ===== dice / log / export / tabs ===== */
 document.querySelectorAll('.die').forEach(b=>b.onclick=()=>{const m=+b.dataset.d,v=1+Math.floor(Math.random()*m);document.getElementById('diceOut').textContent=v;document.getElementById('diceCtx').textContent=m===10?(v<=3?'villain':(v>=8?'paragon':'unproven')):'';});
