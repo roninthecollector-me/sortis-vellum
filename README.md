@@ -30,9 +30,9 @@ It's a static site. Push this repo to GitHub, import it into Vercel, and every p
 
 Off by default; the app is fully usable without it. To sync one world across devices with a simple login (Google or email magic link), set up Supabase and fill `config.js`. See **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**.
 
-## Roadmap
+## Map viewer
 
-The next major feature is a **map viewer**: upload your finished panel art, attach it to a panel at its current generation, and see the whole map assembled — with a generation slider to view the world as it looked at any point in its history. Full spec in **[docs/MAP-VIEWER.md](docs/MAP-VIEWER.md)**.
+Upload your finished panel art (Atlas → **Upload** on any panel), and it attaches to that panel at its current generation. The **Map** tab assembles the whole world by coordinate, with a generation slider to see it as it looked at any point in its history — click any panel for the full-res image. Requires sign-in (cloud sync); without it the map still renders panel placeholders. Full spec in **[docs/MAP-VIEWER.md](docs/MAP-VIEWER.md)**.
 
 ## Working on this project
 

@@ -186,7 +186,58 @@
   canvas#panelCv{display:none}
   .cloud-note{font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px}
   .cloud-msg{font-family:var(--mono);font-size:10px;color:var(--verd);margin-top:8px;letter-spacing:1px;min-height:12px}
-  @media (max-width:560px){.split3,.split2{grid-template-columns:1fr}.card-face,.capture,.resolve,.draw-meta{width:100%;max-width:330px}}
+
+  /* Atlas — panel image chips */
+  .pimg{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  .gchip{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid var(--verd-deep);color:var(--verd);display:inline-flex;align-items:center;gap:5px}
+  .gchip.cur{border-color:var(--gold);color:var(--gold)}
+  .gchip .x{cursor:pointer;color:var(--ash);font-size:11px;line-height:1}
+  .gchip .x:hover{color:var(--ember-soft)}
+  .pthumb{width:30px;height:38px;object-fit:cover;border-radius:3px;border:1px solid var(--line);background:var(--soil2)}
+  .mini[disabled]{opacity:.45;cursor:not-allowed}
+  .mini[disabled]:hover{color:var(--ash);border-color:var(--line)}
+
+  /* Map viewer */
+  .map-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .map-gen-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ash)}
+  #mapGenRange{flex:1;min-width:160px;accent-color:var(--gold)}
+  .map-gen-val{font-family:var(--mono);font-size:13px;color:var(--gold);min-width:120px}
+  .map-stage{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:
+    radial-gradient(900px 460px at 50% -10%,#2a251d,transparent 60%),var(--ink);height:62vh;min-height:360px;cursor:grab}
+  .map-stage.grabbing{cursor:grabbing}
+  .map-canvas{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+  .map-cell{position:absolute;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--soil2);
+    display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+  .map-cell.has-img{cursor:pointer;border-color:var(--ash-dim)}
+  .map-cell.has-img:hover{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .map-cell.current{border-color:var(--gold)}
+  .map-cell img{width:100%;height:100%;object-fit:cover;display:block}
+  .map-cell .ph{text-align:center;padding:6px;font-family:var(--mono);color:var(--ash-dim);letter-spacing:1px;user-select:none}
+  .map-cell .ph .co{font-size:11px;color:var(--ash)}
+  .map-cell .ph .te{font-size:8px;text-transform:uppercase;margin-top:3px}
+  .map-cell .gtag{position:absolute;left:4px;bottom:4px;font-family:var(--mono);font-size:8px;letter-spacing:1px;
+    background:rgba(20,18,13,.78);color:var(--gold);padding:1px 5px;border-radius:3px}
+
+  .lightbox{display:none;position:fixed;inset:0;z-index:50;background:rgba(8,7,5,.86);
+    align-items:center;justify-content:center;padding:30px}
+  .lightbox.show{display:flex}
+  .lb-inner{position:relative;max-width:92vw;max-height:92vh;display:flex;flex-direction:column;align-items:center;gap:12px}
+  .lb-imgwrap{display:flex;align-items:center;justify-content:center;max-width:84vw;max-height:78vh}
+  .lb-imgwrap img{max-width:84vw;max-height:78vh;border-radius:6px;box-shadow:0 24px 60px rgba(0,0,0,.6);border:1px solid #4a4030}
+  .lb-imgwrap .loading{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ash)}
+  .lb-meta{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--bone-dim);text-align:center}
+  .lb-meta b{color:var(--gold)}
+  .lb-close{position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--ash-dim);
+    background:var(--soil);color:var(--bone-dim);font-size:15px;cursor:pointer;z-index:2}
+  .lb-close:hover{border-color:var(--gold);color:var(--gold)}
+  .lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid var(--ash-dim);
+    background:var(--soil);color:var(--bone-dim);font-size:24px;line-height:1;cursor:pointer;z-index:2}
+  .lb-nav:hover{border-color:var(--gold);color:var(--gold)}
+  .lb-nav[disabled]{opacity:.3;cursor:default}.lb-nav[disabled]:hover{border-color:var(--ash-dim);color:var(--bone-dim)}
+  .lb-prev{left:-54px}.lb-next{right:-54px}
+
+  @media (max-width:560px){.split3,.split2{grid-template-columns:1fr}.card-face,.capture,.resolve,.draw-meta{width:100%;max-width:330px}
+    .lb-prev{left:6px}.lb-next{right:6px}}
 </style>
 <!-- Cloud sync config (filled in by Claude Code after the Supabase project exists). Safe if missing → app runs local-only. -->
 <script src="config.js" onerror="window.__noConfig=1"></script>
@@ -207,6 +258,7 @@
   <nav class="tabs">
     <button class="tab active" data-view="draw">Draw</button>
     <button class="tab" data-view="atlas">Atlas</button>
+    <button class="tab" data-view="map">Map</button>
     <button class="tab" data-view="deck">Deck</button>
     <button class="tab" data-view="forge">Forge a Card</button>
     <button class="tab" data-view="archive">Retired</button>
@@ -255,6 +307,28 @@
     <h3 class="sec">Heroes</h3>
     <div id="heroList"></div>
   </section>
+
+  <section class="view" id="v-map">
+    <div class="toolbar"><h2>Map</h2><span class="pill cur" id="mapStatus">—</span></div>
+    <div id="mapHint" class="cloud-note" style="display:none"></div>
+    <div class="map-controls" id="mapControls" style="display:none">
+      <label class="map-gen-label">Generation</label>
+      <input type="range" id="mapGenRange" min="1" max="1" step="1" value="1">
+      <span id="mapGenVal" class="map-gen-val">—</span>
+      <button class="mini" id="mapResetView" title="Reset pan &amp; zoom">Reset view</button>
+    </div>
+    <div class="map-stage" id="mapStage"><div class="map-canvas" id="mapCanvas"></div></div>
+  </section>
+
+  <div class="lightbox" id="lightbox">
+    <div class="lb-inner">
+      <button class="lb-close" id="lbClose" title="Close">✕</button>
+      <button class="lb-nav lb-prev" id="lbPrev" title="Earlier generation">‹</button>
+      <div class="lb-imgwrap" id="lbImgWrap"></div>
+      <button class="lb-nav lb-next" id="lbNext" title="Later generation">›</button>
+      <div class="lb-meta" id="lbMeta"></div>
+    </div>
+  </div>
 
   <section class="view" id="v-deck">
     <div class="toolbar"><h2>The Deck</h2><div class="filterbar" id="deckFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
@@ -575,6 +649,7 @@ async function boot(){
   if(saved && saved.deck){ S=saved; }
   else { S.deck=seedDeck(); await persist(); }
   S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
+  S.panels.forEach(p=>{ p.images=p.images||{}; });
   pickQuote();
   renderAll();
   initCloud();
@@ -591,7 +666,7 @@ async function initCloud(){
     cloudReady = true;
     const { data:{ session } } = await sb.auth.getSession();
     sbUser = session ? session.user : null;
-    sb.auth.onAuthStateChange(async (_e, sess)=>{ const was=sbUser; sbUser = sess ? sess.user : null; renderAuth(); if(sbUser && !was) await pullCloud(); });
+    sb.auth.onAuthStateChange(async (_e, sess)=>{ const was=sbUser; sbUser = sess ? sess.user : null; renderAuth(); renderAtlas(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); if(sbUser && !was) await pullCloud(); });
     renderAuth();
     if(sbUser) await pullCloud();
   }catch(e){ console.warn('cloud init failed', e); }
@@ -601,7 +676,7 @@ async function pullCloud(){
   try{
     const { data, error } = await sb.from('worlds').select('data').eq('user_id', sbUser.id).maybeSingle();
     if(error) throw error;
-    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
+    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
     else { await pushCloud(); } // first sign-in: seed the cloud from this device
   }catch(e){ console.warn('cloud pull failed', e); }
 }
@@ -690,20 +765,25 @@ function renderAtlas(){
   document.getElementById('panelCount').textContent = S.panels.length?('· '+S.panels.length):'';
   // panels
   const pl=document.getElementById('panelList');
+  const upTip='Sign in (Settings → Cloud sync) to store panel images.';
   pl.innerHTML = S.panels.length ? S.panels.map(p=>`
     <div class="row">
       <div class="rnum black">▣</div>
       <div><div class="rtitle">${esc(p.coord)} ${p.coord===S.currentPanel?'<span class="pill cur" style="margin-left:6px">current</span>':''}</div>
-        <div class="rmeta">${esc(p.terrain)} · founded Yr ${p.founded} · gen ${p.gen}</div></div>
+        <div class="rmeta">${esc(p.terrain)} · founded Yr ${p.founded} · gen ${p.gen}</div>
+        ${panelImagesHTML(p)}</div>
       <div class="rowacts">
         ${p.coord!==S.currentPanel?`<button class="mini" data-pcur="${esc(p.coord)}">Set current</button>`:''}
         <button class="mini" data-pgen="${esc(p.coord)}">Gen +1</button>
+        ${imagesEnabled()?`<button class="mini" data-pup="${esc(p.coord)}">${(p.images&&p.images[String(p.gen||1)])?'Replace':'Upload'}</button>`:`<button class="mini" disabled title="${upTip}">Upload</button>`}
         <button class="mini go" data-pdl="${esc(p.coord)}">PNG</button>
       </div>
     </div>`).join('') : '<div class="empty">No panels yet. Forge one above, or draw a Foundation card.</div>';
   pl.querySelectorAll('[data-pcur]').forEach(b=>b.onclick=()=>{S.currentPanel=b.dataset.pcur;persist();renderHeader();renderAtlas();});
   pl.querySelectorAll('[data-pgen]').forEach(b=>b.onclick=()=>{const p=S.panels.find(x=>x.coord===b.dataset.pgen);if(p){p.gen=(p.gen||1)+1;persist();renderAtlas();}});
   pl.querySelectorAll('[data-pdl]').forEach(b=>b.onclick=()=>downloadPanel(b.dataset.pdl));
+  pl.querySelectorAll('[data-pup]').forEach(b=>b.onclick=()=>triggerPanelUpload(b.dataset.pup));
+  pl.querySelectorAll('[data-prm]').forEach(b=>b.onclick=()=>removePanelImage(b.dataset.prm,+b.dataset.prmg));
   // places
   const plc=document.getElementById('placeList');
   plc.innerHTML = S.places.length ? S.places.map((p,i)=>`
@@ -762,6 +842,185 @@ function downloadPanel(coord){
   const p=S.panels.find(x=>x.coord===coord); if(!p)return;
   const cv=drawPanelCanvas(p);
   cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='panel_'+coord.replace(/\s/g,'')+'_gen'+(p.gen||1)+'.png';a.click();},'image/png');
+}
+
+/* ===== panel images + MAP viewer (Supabase Storage) ===== */
+function imagesEnabled(){ return !!(cloudReady && sbUser && sb); }
+function coordNoSpace(coord){ return (coord||'').replace(/\s+/g,''); }
+function imageGensFor(p){ return Object.keys(p.images||{}).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b); }
+function latestImageAtGen(p,G){ const gs=imageGensFor(p).filter(g=>g<=G); return gs.length?gs[gs.length-1]:null; }
+function maxGen(){ let m=1; S.panels.forEach(p=>{ m=Math.max(m,p.gen||1,...imageGensFor(p)); }); return m; }
+function panelImagesHTML(p){
+  const gens=imageGensFor(p); if(!gens.length) return '';
+  const en=imagesEnabled();
+  return '<div class="pimg">'+gens.map(g=>`<span class="gchip ${g===(p.gen||1)?'cur':''}">gen ${g}${en?` <span class="x" data-prm="${esc(p.coord)}" data-prmg="${g}" title="Remove this image">✕</span>`:''}</span>`).join('')+'</div>';
+}
+
+// Re-encode an upload into a full (≤2400px) and a thumb (~400px) WebP blob — keeps storage/egress sane.
+async function processImage(file){
+  const bmp=await createImageBitmap(file);
+  const make=(maxSide,q)=>{
+    const scale=Math.min(1, maxSide/Math.max(bmp.width,bmp.height));
+    const cw=Math.max(1,Math.round(bmp.width*scale)), ch=Math.max(1,Math.round(bmp.height*scale));
+    const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+    cv.getContext('2d').drawImage(bmp,0,0,cw,ch);
+    return new Promise(res=>cv.toBlob(b=>res({blob:b,w:cw,h:ch}),'image/webp',q));
+  };
+  const full=await make(2400,0.9), thumb=await make(400,0.7);
+  if(bmp.close) bmp.close();
+  return {full,thumb};
+}
+function triggerPanelUpload(coord){
+  if(!imagesEnabled()) return;
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadPanelImage(coord,f); };
+  inp.click();
+}
+async function uploadPanelImage(coord,file){
+  const p=S.panels.find(x=>x.coord===coord); if(!p||!imagesEnabled()) return;
+  const gen=p.gen||1, base=sbUser.id+'/'+coordNoSpace(coord)+'/gen'+gen;
+  flag('processing image…');
+  try{
+    const {full,thumb}=await processImage(file);
+    const path=base+'.webp', thumbPath=base+'.thumb.webp';
+    const u1=await sb.storage.from('panels').upload(path,full.blob,{upsert:true,contentType:'image/webp'});
+    if(u1.error) throw u1.error;
+    const u2=await sb.storage.from('panels').upload(thumbPath,thumb.blob,{upsert:true,contentType:'image/webp'});
+    if(u2.error) throw u2.error;
+    p.images=p.images||{};
+    p.images[String(gen)]={path,thumbPath,w:full.w,h:full.h,bytes:full.blob.size,uploadedAt:new Date().toISOString()};
+    delete signedCache[path]; delete signedCache[thumbPath];   // bust cache on replace
+    await persist(); renderAtlas();
+    flag('image saved · gen '+gen);
+  }catch(e){ console.warn('upload failed',e); flag('image upload failed'); alert('Image upload failed: '+(e.message||e)); }
+}
+async function removePanelImage(coord,gen){
+  const p=S.panels.find(x=>x.coord===coord); if(!p) return;
+  const rec=p.images&&p.images[String(gen)]; if(!rec) return;
+  if(!confirm('Remove the gen '+gen+' image for '+coord+'?')) return;
+  if(imagesEnabled()){ try{ await sb.storage.from('panels').remove([rec.path,rec.thumbPath]); }catch(e){ console.warn('remove failed',e); } }
+  delete signedCache[rec.path]; delete signedCache[rec.thumbPath];
+  delete p.images[String(gen)];
+  await persist(); renderAtlas();
+  if(document.getElementById('v-map').classList.contains('active')) renderMap();
+}
+
+// Private bucket → short-lived signed URLs, cached for the session (egress discipline).
+const signedCache={};
+async function signedUrl(path){
+  if(!path||!imagesEnabled()) return null;
+  const c=signedCache[path]; if(c && c.exp>Date.now()) return c.url;
+  try{
+    const {data,error}=await sb.storage.from('panels').createSignedUrl(path,3600);
+    if(error||!data) throw error||new Error('no url');
+    signedCache[path]={url:data.signedUrl, exp:Date.now()+3000*1000};
+    return data.signedUrl;
+  }catch(e){ console.warn('sign url failed',e); return null; }
+}
+
+let mapGen=null, mapView={scale:1,x:0,y:0}, mapViewInit=false, mapObserver=null, mapWired=false;
+const MAP_CELL=120, MAP_GAP=14;
+function applyMapTransform(){ const c=document.getElementById('mapCanvas'); if(c) c.style.transform='translate('+mapView.x+'px,'+mapView.y+'px) scale('+mapView.scale+')'; }
+function centerMap(){
+  const stage=document.getElementById('mapStage'), c=document.getElementById('mapCanvas'); if(!stage||!c) return;
+  mapView.x=Math.max(10,(stage.clientWidth - c.offsetWidth*mapView.scale)/2);
+  mapView.y=Math.max(10,(stage.clientHeight - c.offsetHeight*mapView.scale)/2);
+}
+function renderMap(){
+  S.panels.forEach(p=>{ p.images=p.images||{}; });
+  const status=document.getElementById('mapStatus'), hint=document.getElementById('mapHint'),
+        controls=document.getElementById('mapControls'), canvas=document.getElementById('mapCanvas');
+  if(mapObserver){ mapObserver.disconnect(); mapObserver=null; }
+  if(!S.panels.length){
+    controls.style.display='none'; hint.style.display='none'; status.textContent='No panels yet';
+    canvas.style.width=canvas.style.height=''; canvas.style.transform='';
+    canvas.innerHTML='<div class="empty" style="margin:24px;min-width:280px">No panels yet. Forge one in the Atlas, or draw a Foundation card.</div>';
+    return;
+  }
+  const mg=maxGen();
+  if(mapGen==null||mapGen>mg) mapGen=mg; if(mapGen<1) mapGen=1;
+  controls.style.display='flex';
+  const range=document.getElementById('mapGenRange');
+  range.min=1; range.max=mg; range.value=mapGen;
+  document.getElementById('mapGenVal').textContent='Gen '+mapGen+(mg>1?' / '+mg:'');
+  status.textContent=S.panels.length+' panel'+(S.panels.length===1?'':'s');
+  if(!imagesEnabled()){ hint.style.display='block'; hint.innerHTML='Showing panel placeholders. <b>Sign in</b> (Settings → Cloud sync) to upload art and watch your map fill in.'; }
+  else hint.style.display='none';
+  // lay out by coordinate: x = east(+), y = north up
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  const pos=S.panels.map(p=>{ const c=parseCoord(p.coord); const x=(c.ed==='W'?-c.em:c.em), y=-(c.nd==='S'?-c.nm:c.nm);
+    minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y); return {p,x,y}; });
+  const cols=maxX-minX+1, rows=maxY-minY+1, step=MAP_CELL+MAP_GAP, en=imagesEnabled();
+  canvas.style.width=(cols*step-MAP_GAP)+'px'; canvas.style.height=(rows*step-MAP_GAP)+'px';
+  canvas.innerHTML=pos.map(({p,x,y})=>{
+    const gx=(x-minX)*step, gy=(y-minY)*step;
+    const ig=latestImageAtGen(p,mapGen), showImg=en && ig!=null, rec=showImg?p.images[String(ig)]:null;
+    const cls='map-cell'+(showImg?' has-img':'')+(p.coord===S.currentPanel?' current':'');
+    const inner=rec
+      ? `<div class="ph" data-thumb="${esc(rec.thumbPath)}"><span class="co">${esc(p.coord)}</span></div><div class="gtag">gen ${ig}</div>`
+      : `<div class="ph"><span class="co">${esc(p.coord)}</span><span class="te">${esc(p.terrain)}</span></div>`;
+    return `<div class="${cls}" style="left:${gx}px;top:${gy}px;width:${MAP_CELL}px;height:${MAP_CELL}px" data-coord="${esc(p.coord)}">${inner}</div>`;
+  }).join('');
+  if(en && 'IntersectionObserver' in window){
+    mapObserver=new IntersectionObserver(es=>{ es.forEach(async ent=>{
+      if(!ent.isIntersecting) return; const ph=ent.target; mapObserver.unobserve(ph);
+      const url=await signedUrl(ph.dataset.thumb); if(!url) return;
+      const img=document.createElement('img'); img.loading='lazy'; img.src=url;
+      const co=ph.querySelector('.co'); img.alt=co?co.textContent:''; ph.replaceWith(img);
+    }); },{root:document.getElementById('mapStage'),rootMargin:'150px'});
+    canvas.querySelectorAll('.ph[data-thumb]').forEach(ph=>mapObserver.observe(ph));
+  }
+  canvas.querySelectorAll('.map-cell.has-img').forEach(cell=>cell.onclick=()=>openLightbox(cell.dataset.coord));
+  if(!mapViewInit){ mapView={scale:1,x:0,y:0}; centerMap(); mapViewInit=true; }
+  applyMapTransform();
+}
+function setupMapPanZoom(){
+  const stage=document.getElementById('mapStage'); if(!stage) return;
+  let dragging=false,sx=0,sy=0,ox=0,oy=0,moved=false;
+  stage.addEventListener('mousedown',e=>{ dragging=true; moved=false; sx=e.clientX; sy=e.clientY; ox=mapView.x; oy=mapView.y; stage.classList.add('grabbing'); });
+  window.addEventListener('mousemove',e=>{ if(!dragging)return; mapView.x=ox+(e.clientX-sx); mapView.y=oy+(e.clientY-sy); if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>3)moved=true; applyMapTransform(); });
+  window.addEventListener('mouseup',()=>{ dragging=false; stage.classList.remove('grabbing'); });
+  stage.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); } },true);
+  stage.addEventListener('wheel',e=>{ e.preventDefault(); const r=stage.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+    const ns=Math.min(4,Math.max(0.25,mapView.scale*(e.deltaY<0?1.12:1/1.12))), k=ns/mapView.scale;
+    mapView.x=mx-(mx-mapView.x)*k; mapView.y=my-(my-mapView.y)*k; mapView.scale=ns; applyMapTransform(); },{passive:false});
+}
+// Lightbox — full-res image for a panel, navigable across its generations
+let lbState=null;
+async function openLightbox(coord){
+  const p=S.panels.find(x=>x.coord===coord); if(!p||!imagesEnabled()) return;
+  const gens=imageGensFor(p); if(!gens.length) return;
+  let start=latestImageAtGen(p,mapGen); if(start==null) start=gens[gens.length-1];
+  lbState={coord,gens,idx:Math.max(0,gens.indexOf(start))};
+  document.getElementById('lightbox').classList.add('show');
+  await showLightboxImage();
+}
+async function showLightboxImage(){
+  if(!lbState) return; const p=S.panels.find(x=>x.coord===lbState.coord); if(!p) return;
+  const gen=lbState.gens[lbState.idx], rec=p.images[String(gen)], wrap=document.getElementById('lbImgWrap');
+  wrap.innerHTML='<div class="loading">Loading…</div>';
+  document.getElementById('lbPrev').disabled=lbState.idx<=0;
+  document.getElementById('lbNext').disabled=lbState.idx>=lbState.gens.length-1;
+  document.getElementById('lbMeta').innerHTML='<b>'+esc(p.coord)+'</b> · gen '+gen+' · '+esc(p.terrain)+' · founded Yr '+p.founded;
+  const url=await signedUrl(rec.path); if(!lbState) return;
+  wrap.innerHTML = url ? '<img src="'+url+'" alt="'+esc(p.coord)+' gen '+gen+'">' : '<div class="loading">Could not load image</div>';
+}
+function closeLightbox(){ lbState=null; const lb=document.getElementById('lightbox'); lb.classList.remove('show'); document.getElementById('lbImgWrap').innerHTML=''; }
+function initMapUI(){
+  if(mapWired) return; mapWired=true;
+  setupMapPanZoom();
+  const range=document.getElementById('mapGenRange'); if(range) range.oninput=function(){ mapGen=+this.value; renderMap(); };
+  const rv=document.getElementById('mapResetView'); if(rv) rv.onclick=()=>{ mapView={scale:1,x:0,y:0}; centerMap(); applyMapTransform(); };
+  document.getElementById('lbClose').onclick=closeLightbox;
+  document.getElementById('lbPrev').onclick=()=>{ if(lbState&&lbState.idx>0){ lbState.idx--; showLightboxImage(); } };
+  document.getElementById('lbNext').onclick=()=>{ if(lbState&&lbState.idx<lbState.gens.length-1){ lbState.idx++; showLightboxImage(); } };
+  document.getElementById('lightbox').onclick=e=>{ if(e.target.id==='lightbox') closeLightbox(); };
+  document.addEventListener('keydown',e=>{
+    if(!document.getElementById('lightbox').classList.contains('show')) return;
+    if(e.key==='Escape') closeLightbox();
+    else if(e.key==='ArrowLeft') document.getElementById('lbPrev').click();
+    else if(e.key==='ArrowRight') document.getElementById('lbNext').click();
+  });
 }
 
 /* ===== DECK list ===== */
@@ -1127,10 +1386,11 @@ document.getElementById('addRule').onclick=()=>{const inp=document.getElementByI
 document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.getElementById('addRule').click();};
 document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
-function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');}
+function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 
 resetStage();
+initMapUI();
 boot();
 </script>
 </body>

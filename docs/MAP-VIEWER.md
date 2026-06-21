@@ -1,6 +1,6 @@
 # Feature spec — Panel image upload + Map viewer
 
-Status: **designed, not yet built.** Implement in Claude Code once cloud sync (auth + JSON) from `SUPABASE-SETUP.md` is working. This is the long-term centerpiece: see the finished panels assembled into a navigable map, viewable at any generation.
+Status: **Built (v1).** Implemented in `index.html`: the **Map** tab (coordinate layout, generation slider, lazy-loaded thumbnails, pan/zoom, full-res lightbox) and the Atlas per-panel **Upload / Replace / Remove** with per-generation art chips. Backed by the Supabase `panels` Storage bucket (private, signed URLs). The "Out of scope for v1" list at the bottom is still open. This is the long-term centerpiece: the finished panels assembled into a navigable map, viewable at any generation.
 
 Two linked capabilities:
 1. **Upload** a finished panel image (exported from Procreate, etc.) and attach it to a panel at its **current generation**.

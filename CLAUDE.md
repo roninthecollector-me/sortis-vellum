@@ -19,7 +19,7 @@ A digital worldbuilding engine inspired by Jerry's Map. A single self-contained 
 - `config.js` — cloud-sync config (`window.SORTIS_CONFIG`). Blank = local-only. Filled with Supabase URL + anon key to enable sync. Must be served (no build step), so it's committed; the anon key is public-safe (security is via RLS).
 - `vercel.json` — static hosting config.
 - `docs/SUPABASE-SETUP.md` — exact steps + SQL to stand up cloud sync.
-- `docs/MAP-VIEWER.md` — **next feature to build**: panel image upload + a coordinate map viewer with a generation slider. Designed, not yet implemented. Read it before starting that work.
+- `docs/MAP-VIEWER.md` — spec for the panel image upload + coordinate map viewer with a generation slider. **Built** (Map tab + Atlas upload). Read it before extending that work.
 - `README.md` — human-facing overview.
 
 ## Architecture of `index.html`
@@ -32,8 +32,8 @@ S = {
   settings:{ travelOdds },              // % chance a draw triggers travel
   deck:    [ card, ... ],               // active cards
   archive: [ card, ... ],               // retired cards (restorable)
-  panels:  [ { coord, terrain, founded, gen, order } ],   // ordered registry; travel walks this order
-                                                          // (planned: + images:{ "<gen>": {path,thumbPath,...} } — see docs/MAP-VIEWER.md)
+  panels:  [ { coord, terrain, founded, gen, order, images } ],   // ordered registry; travel walks this order
+                                                          // images:{ "<gen>": {path,thumbPath,w,h,bytes,uploadedAt} } — map viewer; paths are keys in the Supabase `panels` bucket
   currentPanel: "N0 E0",                // the panel you're working
   places:  [ { name, kind, panel, founded, tier, pop } ], // settlements/roads/monuments
   heroes:  [ { name, alignment, status, born, panel } ],  // alignment 1–10, status alive|fallen
