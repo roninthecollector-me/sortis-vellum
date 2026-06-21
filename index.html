@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sortis Vellum — Worldbuilder v0.2</title>
+<style>
+  :root{
+    --ink:#1a1714;--soil:#242019;--soil2:#2c271f;
+    --bone:#e9e1d0;--bone-dim:#d4cab4;
+    --ember:#a6362f;--ember-soft:#c2554c;
+    --verd:#6f8b78;--verd-deep:#3c4d43;
+    --gold:#c9a24b;--ash:#8a8174;--ash-dim:#5f594e;--line:#3a3429;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --body:Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#2a251d,transparent 60%),var(--ink);
+    color:var(--bone-dim);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:22px 20px 80px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding-bottom:16px}
+  .brand h1{font-family:var(--display);font-weight:500;font-size:27px;margin:0;color:var(--bone);letter-spacing:.5px}
+  .brand .sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash);margin-top:4px}
+  .clock{display:flex;gap:16px;align-items:flex-end}
+  .stat{text-align:right}
+  .stat .v{font-family:var(--mono);font-size:20px;color:var(--gold);line-height:1}
+  .stat .l{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-top:4px}
+  .stat.cur .v{color:var(--verd);font-size:16px}
+  .stat.draws .v{color:var(--bone-dim);font-size:16px}
+
+  nav.tabs{display:flex;flex-wrap:wrap;gap:2px;margin:18px 0 22px;border-bottom:1px solid var(--line)}
+  .tab{background:none;border:none;color:var(--ash);font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:9px 13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab:hover{color:var(--bone-dim)}
+  .tab.active{color:var(--bone);border-bottom-color:var(--gold)}
+  .view{display:none}
+  .view.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* Draw */
+  .draw-quote{max-width:440px;margin:2px auto 22px;text-align:center;font-family:var(--display);font-style:italic;font-size:16px;line-height:1.55;color:var(--bone-dim)}
+  .draw-quote::before{content:"";display:block;width:34px;height:1px;background:var(--gold);margin:0 auto 14px}
+  .draw-stage{display:flex;flex-direction:column;align-items:center;padding:10px 0}
+  .deck-btn{position:relative;width:210px;height:294px;border-radius:6px;cursor:pointer;border:none;
+    background:linear-gradient(150deg,#332c22,#211c15);
+    box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
+  .deck-btn:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(0,0,0,.6),inset 0 0 0 1px var(--gold),inset 0 0 60px rgba(0,0,0,.4)}
+  .deck-mark{font-family:var(--display);color:var(--ash);text-align:center}
+  .deck-mark .big{font-size:42px;color:var(--bone-dim)}
+  .deck-mark .small{font-family:var(--mono);font-size:10px;letter-spacing:4px;text-transform:uppercase;margin-top:8px;color:var(--ash-dim)}
+  .working{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--ash);margin-top:14px;text-transform:uppercase}
+  .working b{color:var(--verd)}
+
+  /* travel + sectors banners */
+  .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:330px;margin-top:6px}
+  .meta-chip{flex:1;min-width:150px;border:1px solid var(--line);border-radius:8px;padding:11px 14px;background:var(--soil);text-align:center}
+  .meta-chip .ml{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-bottom:5px}
+  .meta-chip .mv{font-family:var(--display);font-size:22px;color:var(--bone)}
+  .meta-chip.travel.move .mv{color:var(--gold)}
+  .meta-chip.travel.stay .mv{color:var(--verd)}
+  .meta-chip.sectors .mv{color:var(--ember-soft)}
+  .meta-chip .msub{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--ash-dim);margin-top:3px}
+
+  .card-face{width:300px;border-radius:8px;background:linear-gradient(135deg,#efe8d8,#e3d9c3);color:#15120d;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;border:1px solid #c9bda1;margin-top:14px;animation:flip .4s ease}
+  @keyframes flip{from{opacity:0;transform:rotateY(26deg) translateY(8px)}to{opacity:1;transform:none}}
+  .card-num{position:absolute;top:13px;right:17px;font-family:var(--display);font-size:38px;line-height:1;font-weight:600}
+  .card-num.black{color:#15120d}.card-num.red{color:var(--ember)}
+  .card-seal{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6a5f49;border:1px solid #b7a988;border-radius:20px;padding:4px 10px;display:inline-block}
+  .card-title{font-family:var(--display);font-size:23px;margin:13px 0 7px;color:#231d12;padding-right:46px}
+  .card-instr{font-size:14px;color:#3a3122;line-height:1.55}
+  .card-dir{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#6a5f49;margin-top:14px;border-top:1px solid #cbbfa3;padding-top:9px}
+  .card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;width:300px;justify-content:center}
+  .act{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;border-radius:4px;cursor:pointer;border:1px solid var(--line);background:var(--soil);color:var(--bone-dim)}
+  .act:hover{background:var(--soil2);border-color:var(--ash-dim)}
+  .act.year{border-color:var(--gold);color:var(--gold)}
+  .act.roll{border-color:var(--verd);color:var(--verd)}
+  .act.done{border-color:var(--ember);color:var(--ember-soft)}
+  .resolve{width:300px;margin-top:12px}
+  .roll-result{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 auto;width:200px;padding:12px;border:1px solid var(--verd);border-radius:8px;background:linear-gradient(180deg,rgba(111,139,120,.14),rgba(111,139,120,.04));animation:flip .3s ease}
+  .roll-die{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
+  .roll-val{font-family:var(--display);font-size:46px;line-height:1;color:var(--verd)}
+  .roll-read{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--bone-dim);text-align:center;margin-top:3px}
+  .roll-result.good{border-color:var(--gold);background:linear-gradient(180deg,rgba(201,162,75,.16),rgba(201,162,75,.04))}
+  .roll-result.good .roll-val{color:var(--gold)}
+  .roll-result.ill{border-color:var(--ember);background:linear-gradient(180deg,rgba(166,54,47,.16),rgba(166,54,47,.04))}
+  .roll-result.ill .roll-val{color:var(--ember-soft)}
+
+  /* Capture */
+  .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .capture h4{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .capture h4::after{content:"";flex:1;height:1px;background:var(--line)}
+  .cap-row{margin-bottom:10px}
+  .cap-row label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin-bottom:4px}
+  .cap-row input,.cap-row select,.capture textarea{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:13px;padding:7px 9px;border-radius:4px}
+  .cap-row input:focus,.cap-row select:focus,.capture textarea:focus{outline:none;border-color:var(--gold)}
+  .cap-coord{display:grid;grid-template-columns:1fr 48px 1fr 48px;gap:6px}
+  .coord-wide{display:grid;grid-template-columns:1fr 72px 1fr 72px;gap:10px}
+  .coord-wide input,.coord-wide select{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:15px;padding:10px;border-radius:4px}
+  .coord-wide input:focus,.coord-wide select:focus{outline:none;border-color:var(--gold)}
+  .cap-coord input{padding-left:8px;padding-right:4px}
+  .cap-build{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px;border:1px solid var(--gold);background:rgba(201,162,75,.12);color:var(--gold);border-radius:4px;cursor:pointer;width:100%;margin-top:4px}
+  .cap-build:hover{background:rgba(201,162,75,.2)}
+  .cap-out{margin-top:12px;display:none}
+  .cap-out.show{display:block}
+  .cap-title{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--verd);margin-bottom:5px}
+  .cap-title b{color:var(--bone)}
+  .cap-out textarea{font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--bone-dim);min-height:150px}
+  .cap-tools{display:flex;gap:6px;margin-top:6px}
+  .cap-tools button{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px;border:1px solid var(--line);background:transparent;color:var(--ash);border-radius:4px;cursor:pointer}
+  .cap-tools button:hover{color:var(--bone);border-color:var(--ash-dim)}
+  .cap-msg{font-family:var(--mono);font-size:10px;color:var(--verd);margin-top:7px;letter-spacing:1px;min-height:12px}
+
+  /* generic */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .toolbar h2{font-family:var(--display);font-weight:500;font-size:20px;margin:0;color:var(--bone)}
+  h3.sec{font-family:var(--display);font-weight:500;font-size:17px;color:var(--bone);margin:22px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:6px;background:var(--soil);margin-bottom:7px}
+  .rnum{font-family:var(--display);font-size:20px;text-align:center;min-width:24px}
+  .rnum.red{color:var(--ember-soft)}.rnum.black{color:var(--bone)}
+  .rtitle{font-family:var(--display);font-size:16px;color:var(--bone)}
+  .rmeta{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-top:3px}
+  .rinstr{font-size:12px;color:var(--ash);margin-top:4px;line-height:1.45}
+  .tag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-right:5px;border:1px solid var(--verd-deep);color:var(--verd)}
+  .tag.cat{border-color:var(--ash-dim);color:var(--ash)}.tag.gold{border-color:var(--gold);color:var(--gold)}.tag.sp{border-color:var(--ember-soft);color:var(--ember-soft)}
+  .rowacts{display:flex;gap:6px}
+  .mini{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-radius:4px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ash)}
+  .mini:hover{color:var(--bone);border-color:var(--ash-dim)}
+  .mini.danger:hover{color:var(--ember-soft);border-color:var(--ember)}
+  .mini.go{border-color:var(--gold);color:var(--gold)}.mini.go:hover{background:rgba(201,162,75,.12)}
+  .empty{font-family:var(--mono);font-size:12px;color:var(--ash-dim);letter-spacing:1px;padding:26px;text-align:center;border:1px dashed var(--line);border-radius:8px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:3px 9px;border-radius:14px;border:1px solid var(--verd-deep);color:var(--verd)}
+  .pill.cur{border-color:var(--gold);color:var(--gold)}
+
+  /* forms */
+  .form{background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:18px;max-width:620px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-bottom:6px}
+  .field input,.field textarea,.field select{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:14px;padding:9px 11px;border-radius:4px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold)}
+  .field textarea{resize:vertical;min-height:64px}
+  .split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .split2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .checks{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}
+  .checks label{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--bone-dim);cursor:pointer}
+  .checks input{accent-color:var(--gold);width:auto}
+  .btn{font-family:var(--mono);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:11px 18px;border-radius:5px;cursor:pointer;border:1px solid var(--gold);background:rgba(201,162,75,.12);color:var(--gold)}
+  .btn:hover{background:rgba(201,162,75,.2)}
+  .btn.ghost{border-color:var(--line);background:transparent;color:var(--ash)}
+  .btn.ghost:hover{color:var(--bone);border-color:var(--ash-dim)}
+
+  .log-entry{border-left:2px solid var(--line);padding:4px 0 14px 16px;position:relative;margin-left:6px}
+  .log-entry::before{content:"";position:absolute;left:-5px;top:8px;width:8px;height:8px;border-radius:50%;background:var(--ash-dim)}
+  .log-entry.year::before{background:var(--gold)}
+  .log-yr{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--gold)}
+  .log-card{font-family:var(--display);font-size:15px;color:var(--bone)}
+  .log-note{font-family:var(--mono);font-size:11px;color:var(--ash);margin-top:3px}
+
+  .dice-tray{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+  .die{font-family:var(--mono);font-size:11px;padding:8px 12px;border:1px solid var(--verd-deep);color:var(--verd);background:transparent;border-radius:4px;cursor:pointer}
+  .die:hover{background:rgba(111,139,120,.14)}
+  .die-out{font-family:var(--display);font-size:28px;color:var(--gold);min-width:42px;text-align:center}
+  .die-ctx{font-family:var(--mono);font-size:11px;color:var(--ash)}
+
+  .rules{max-width:680px}
+  .rules p{font-size:14px;line-height:1.6;color:var(--bone-dim)}
+  .rules b{color:var(--bone)}
+  .rules h3{font-family:var(--display);font-weight:500;font-size:18px;color:var(--bone);margin:24px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .rules code{font-family:var(--mono);font-size:12px;color:var(--verd)}
+  .rules ul{padding-left:18px}.rules li{font-size:14px;line-height:1.6;color:var(--bone-dim);margin-bottom:4px}
+  .rules .lede{font-family:var(--display);font-size:17px;line-height:1.6;color:var(--bone-dim);border-left:2px solid var(--gold);padding-left:16px;margin:0 0 22px}
+  .rgrid{display:grid;grid-template-columns:64px 1fr;gap:14px 16px;align-items:start;margin-bottom:8px}
+  .rgrid>div{font-size:14px;line-height:1.55;color:var(--bone-dim)}
+  .rkey{display:flex;gap:6px;align-items:center;justify-content:center;padding-top:2px}
+  .bignum{font-family:var(--display);font-size:34px;font-weight:600;color:var(--bone)}.bignum.black{color:var(--bone)}.bignum.red{color:var(--ember-soft)}
+  .swatch{width:20px;height:28px;border-radius:3px;border:1px solid #00000040}.swatch.black{background:#15120d}.swatch.red{background:var(--ember)}
+  .rules ul.cats{list-style:none;padding:0;margin:0}
+  .rules ul.cats li{font-size:14px;line-height:1.5;color:var(--bone-dim);padding:7px 0;border-bottom:1px solid #2c271f}
+  .rules ul.cats li .tag{margin-right:10px}
+  .rules ol.loop{padding-left:20px;margin:0}.rules ol.loop li{font-size:14px;line-height:1.7;color:var(--bone-dim)}
+
+  .foot{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+  .save-flag{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);align-self:center;margin-right:auto}
+  input[type=file]{display:none}
+  canvas#panelCv{display:none}
+  .cloud-note{font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px}
+  .cloud-msg{font-family:var(--mono);font-size:10px;color:var(--verd);margin-top:8px;letter-spacing:1px;min-height:12px}
+  @media (max-width:560px){.split3,.split2{grid-template-columns:1fr}.card-face,.capture,.resolve,.draw-meta{width:100%;max-width:330px}}
+</style>
+<!-- Cloud sync config (filled in by Claude Code after the Supabase project exists). Safe if missing → app runs local-only. -->
+<script src="config.js" onerror="window.__noConfig=1"></script>
+<!-- Supabase client. Optional; app degrades to local-only if it can't load. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1 id="worldName">The Sortis Vellum</h1><div class="sub">Worldbuilder · v0.2</div></div>
+    <div class="clock">
+      <div class="stat cur"><div class="v" id="hCur">—</div><div class="l">Current Panel</div></div>
+      <div class="stat"><div class="v" id="hYear">Yr 0</div><div class="l">World Age</div></div>
+      <div class="stat draws"><div class="v" id="hDraws">0</div><div class="l">Draws</div></div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="draw">Draw</button>
+    <button class="tab" data-view="atlas">Atlas</button>
+    <button class="tab" data-view="deck">Deck</button>
+    <button class="tab" data-view="forge">Forge a Card</button>
+    <button class="tab" data-view="archive">Retired</button>
+    <button class="tab" data-view="chron">Chronicle</button>
+    <button class="tab" data-view="worldrules">World Rules</button>
+    <button class="tab" data-view="dice">Dice</button>
+    <button class="tab" data-view="rules">How To</button>
+    <button class="tab" data-view="settings">Settings</button>
+  </nav>
+
+  <section class="view active" id="v-draw">
+    <div class="draw-quote" id="drawQuote"></div>
+    <div class="draw-stage" id="drawStage"></div>
+  </section>
+
+  <section class="view" id="v-atlas">
+    <div class="toolbar"><h2>Atlas</h2><span class="pill cur" id="atlasCur">No panels yet</span></div>
+
+    <div class="form" style="max-width:560px;margin-bottom:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <label style="font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ash)">Travel odds</label>
+      <input type="range" id="oddsRange" min="0" max="100" step="5" value="50" style="flex:1;min-width:160px;accent-color:var(--gold)">
+      <span id="oddsVal" style="font-family:var(--mono);font-size:13px;color:var(--gold);min-width:130px">50% travel · 50% stay</span>
+    </div>
+
+    <h3 class="sec">Forge a panel</h3>
+    <div class="form" style="max-width:560px">
+      <div class="field"><label>Coordinate</label>
+        <div class="coord-wide">
+          <input type="number" id="fpNs" value="0" min="0"><select id="fpNsD"><option>N</option><option>S</option></select>
+          <input type="number" id="fpEw" value="0" min="0"><select id="fpEwD"><option>E</option><option>W</option></select>
+        </div>
+      </div>
+      <div class="split2">
+        <div class="field"><label>Terrain</label><select id="fpTer"><option>Ruins</option><option>Scarred</option><option>Drowned</option><option>Wilds</option><option>Other</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn" id="fpAdd" style="width:100%">Add panel</button></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim)">Adds the panel to your world and makes it current. Download its template from the list below.</div>
+    </div>
+
+    <h3 class="sec">Panels <span id="panelCount" style="color:var(--ash);font-family:var(--mono);font-size:12px"></span></h3>
+    <div id="panelList"></div>
+
+    <h3 class="sec">Places</h3>
+    <div id="placeList"></div>
+
+    <h3 class="sec">Heroes</h3>
+    <div id="heroList"></div>
+  </section>
+
+  <section class="view" id="v-deck">
+    <div class="toolbar"><h2>The Deck</h2><div class="filterbar" id="deckFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+    <input type="text" id="deckSearch" placeholder="Search cards — name, keyword, trait…" style="width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:14px;padding:10px 12px;border-radius:5px;margin-bottom:14px">
+    <div id="deckList"></div>
+  </section>
+
+  <section class="view" id="v-forge">
+    <div class="toolbar"><h2 id="forgeTitle">Forge a Card</h2></div>
+    <div class="form">
+      <div class="field"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Spreading Wood"></div>
+      <div class="split3">
+        <div class="field"><label>Category</label>
+          <select id="fCat">
+            <option value="foundation">Foundation (new panel)</option>
+            <option value="terrain">Terrain (shape the panel)</option>
+            <option value="develop">Develop (settle / build)</option>
+            <option value="art">Art (collage &amp; imagery)</option>
+            <option value="discovery">Discovery (ruins / relics)</option>
+            <option value="hero">Hero</option>
+            <option value="event">Event</option>
+            <option value="lore">Lore</option>
+            <option value="meta">Meta (changes the deck)</option>
+            <option value="force">Force (cataclysm)</option>
+          </select>
+        </div>
+        <div class="field"><label>Steps (move distance)</label><input type="text" id="fNum" placeholder="2" inputmode="numeric"></div>
+        <div class="field"><label>Ink / direction</label><select id="fColor"><option value="black">Black · clockwise</option><option value="red">Red · counter-clockwise</option></select></div>
+      </div>
+      <div class="field"><label>Instruction</label><textarea id="fInstr" placeholder="What the explorer does when this turns up."></textarea></div>
+      <div class="field"><label>Traits</label>
+        <div class="checks">
+          <label><input type="checkbox" id="tAdvance"> Advances the year</label>
+          <label><input type="checkbox" id="tLore"> Prompts a Lore entry</label>
+          <label><input type="checkbox" id="tMeta"> Modifies the deck</label>
+          <label><input type="checkbox" id="tRoll"> Requires a roll</label>
+          <select id="fRoll" style="width:auto"><option value="">—</option><option>d4</option><option>d6</option><option>d8</option><option selected>d10</option><option>d12</option><option>d20</option><option>d100</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Area</label>
+        <div class="checks"><label><input type="checkbox" id="tSpace"> Creates space — roll sectors</label></div>
+        <div class="split2" id="sectorRange" style="margin-top:10px;display:none">
+          <div class="field" style="margin:0"><label>Min sectors</label><input type="number" id="fSmin" value="1" min="1" max="80"></div>
+          <div class="field" style="margin:0"><label>Max sectors</label><input type="number" id="fSmax" value="80" min="1" max="80"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px"><button class="btn" id="forgeSave">Add to the deck</button><button class="btn ghost" id="forgeReset">Clear</button></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-archive">
+    <div class="toolbar"><h2>Retired Cards</h2></div>
+    <div id="archiveList"></div>
+  </section>
+
+  <section class="view" id="v-chron">
+    <div class="toolbar"><h2>Chronicle</h2><button class="mini danger" id="clearLog">Clear log</button></div>
+    <div id="logList"></div>
+  </section>
+
+  <section class="view" id="v-worldrules">
+    <div class="toolbar"><h2>World Rules</h2><span class="pill" id="ruleCount"></span></div>
+    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:600px;margin-top:-4px">The laws of your world — what is simply <i>true</i> here. Magic, gods, the shape of the year, the fate of the dead. Add them as the deck reveals them, or whenever you decide.</p>
+    <div class="form" style="max-width:600px;margin-bottom:16px">
+      <div class="field" style="margin:0"><label>New rule</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="newRule" placeholder="e.g. The year turns in three seasons." style="flex:1">
+          <button class="btn" id="addRule">Add to the tome</button>
+        </div>
+      </div>
+    </div>
+    <div id="ruleList"></div>
+  </section>
+
+  <section class="view" id="v-dice">
+    <div class="toolbar"><h2>The Dice</h2></div>
+    <div class="dice-tray">
+      <button class="die" data-d="4">d4</button><button class="die" data-d="6">d6</button><button class="die" data-d="8">d8</button>
+      <button class="die" data-d="10">d10</button><button class="die" data-d="12">d12</button><button class="die" data-d="20">d20</button><button class="die" data-d="100">d100</button>
+      <span class="die-out" id="diceOut">—</span><span class="die-ctx" id="diceCtx"></span>
+    </div>
+  </section>
+
+  <section class="view" id="v-rules">
+    <div class="toolbar"><h2>How It Works</h2></div>
+    <div class="rules">
+      <p class="lede">Draw a card. Do what it says. The deck — not you — decides what the world does next. You are the <b>explorer</b> who records it. Work a little or a lot in a sitting; the world keeps its own time.</p>
+
+      <h3>Reading a card</h3>
+      <div class="rgrid">
+        <div class="rkey"><span class="bignum black">2</span></div>
+        <div><b>The number (top-right) = Steps.</b> How far you move when the world sends you travelling, walked through your panels in the order they were forged. A <span style="color:var(--bone)">black</span> number moves you clockwise, a <span style="color:var(--ember-soft)">red</span> one counter-clockwise. <b>0 steps</b> holds you in place even on a Travel result.</div>
+
+        <div class="rkey"><span class="swatch black"></span><span class="swatch red"></span></div>
+        <div><b>The ink colour = direction.</b> <span style="color:var(--bone)">Black</span> = clockwise, <span style="color:var(--ember-soft)">red</span> = counter-clockwise. It decides which way you travel along the map.</div>
+
+        <div class="rkey"><span class="card-seal">Terrain</span></div>
+        <div><b>The seal = category</b> — what kind of move this is. See below.</div>
+
+        <div class="rkey"><span class="bignum" style="color:var(--ember-soft)">14</span></div>
+        <div><b>The Sectors number (space cards only) = area.</b> Each panel is an 80-square grid; this rolls fresh each draw and tells you how many squares to cover with the card's feature. It only appears on cards that create space.</div>
+      </div>
+
+      <h3>Travel &amp; the current panel</h3>
+      <p>You hold a <b>current panel</b> and keep working it until the world moves you on. Every draw flips a <b>Travel toss</b> — <i>Stay</i> and you keep working where you are; <i>Travel</i> and you move <b>Steps</b> panels in the ink's direction, landing on a new current panel automatically. <b>Foundation</b> cards always take you to fresh ground. Tune the odds with the slider in the Atlas (starts 50/50) — lower it to develop panels more deeply before moving on.</p>
+
+      <h3>The categories</h3>
+      <ul class="cats">
+        <li><span class="tag cat">Foundation</span> Births a new panel — ruins, drowned land, scarred earth, wilds. Always takes you to that new ground.</li>
+        <li><span class="tag cat">Terrain</span> Shapes the current panel — water, forest, farmland, stone, waste. These roll <b>Sectors</b>.</li>
+        <li><span class="tag cat">Develop</span> Builds settlements, roads, and monuments. Settlements rise through population tiers; these age the world.</li>
+        <li><span class="tag cat">Art</span> Adds to the panel by hand — collage, personal photos, found text, inverted or black-and-white imagery, or a chosen subject. Image, not infrastructure.</li>
+        <li><span class="tag cat">Discovery</span> Unearths tomes and relics from the old world, feeding the Lore Book.</li>
+        <li><span class="tag cat gold">Hero</span> Births, activates, and falls heroes (and villains). Needs a panel to be born on.</li>
+        <li><span class="tag cat">Event</span> Something befalls the current panel — resolved with the living heroes there.</li>
+        <li><span class="tag cat">Lore</span> Stops the action so you can write — journal entries, history, legends, myths, tragedies, religions, otherworldly events, and new <b>world rules</b> (which collect in the World Rules tome).</li>
+        <li><span class="tag cat">Meta</span> Rewrites the deck itself — retire, edit, or forge cards.</li>
+        <li><span class="tag cat">Force</span> Cataclysm. Offstage for now; add it when you're ready.</li>
+      </ul>
+
+      <h3>The traits</h3>
+      <ul class="cats">
+        <li><span class="tag">advance</span> Completing the card pushes the <b>World Age +1 year</b>. Building takes time.</li>
+        <li><span class="tag">lore</span> Prompts a <b>Lore Book entry</b> — name it here, write it in your vault.</li>
+        <li><span class="tag">roll</span> Calls for a die (a d10 for hero alignment and event outcomes).</li>
+        <li><span class="tag">meta</span> Tells you to change the deck.</li>
+        <li><span class="tag sp">sectors</span> Creates space — rolls an area between the card's own min and max.</li>
+      </ul>
+
+      <h3>Population</h3>
+      <p>Settlements begin as a <b>Camp</b> (400) and climb — <b>Holdfast</b> 800, <b>Reach</b> 1200, <b>Bastion</b> 2400 — when Develop cards grow them. Grow a settlement from the <b>Atlas</b> (or the <i>Grow a settlement</i> capture on a Develop card).</p>
+
+      <h3>When the world is empty</h3>
+      <p>Heroes, events, terrain, and lore need somewhere to happen, so until you've forged your first panel only <b>Foundation</b> (and <b>Meta</b>) cards will surface. Forge the origin panel in the Atlas, and the rest of the deck opens up.</p>
+
+      <h3>The daily loop</h3>
+      <ol class="loop">
+        <li><b>Draw</b> a card. Note the Travel toss and any Sectors roll.</li>
+        <li><b>Resolve</b> — roll the d10 if asked, then fill the capture fields (the coordinate defaults to your current panel).</li>
+        <li><b>Do the work</b> on the panel — Steps tell you where, Sectors tell you how much.</li>
+        <li><b>Build the note → Copy</b>, and paste it into your vault.</li>
+        <li><b>Complete &amp; log.</b> Captured records also commit to your Atlas. Draw again, or stop for the day.</li>
+      </ol>
+
+      <h3>Capture for the vault</h3>
+      <p>Every draw can emit a ready-to-paste Markdown note with <code>[[links]]</code> and <code>#tags</code> filled in, the coordinate pre-set to your current panel. Capturing a Panel, Place, or Hero also writes it into your Atlas. Lore auto-names <code>Yr{year}{coord}-{n}</code>, where <code>n</code> runs as one running timeline across the whole year, so the world's history reads in order and links out to each panel.</p>
+
+      <h3>The deck is alive</h3>
+      <p>Meta cards retire, rewrite, and forge new cards — <b>New Law</b> even hands you a randomly-assigned kind, steps, and ink, and asks you to name the law. Nothing is lost: retired cards wait in <b>Retired</b>, ready to return. Over the years the deck drifts away from the one you started with, and you won't have decided that on purpose. That drift is the point.</p>
+    </div>
+  </section>
+
+  <section class="view" id="v-settings">
+    <div class="toolbar"><h2>Settings</h2></div>
+
+    <h3 class="sec">World</h3>
+    <div class="form" style="max-width:560px">
+      <div class="field" style="margin:0"><label>World name</label><input type="text" id="setWorld" maxlength="40" placeholder="Name your world"></div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Shown in the top-left and used in your Chronicle export.</div>
+    </div>
+
+    <h3 class="sec">Cloud sync</h3>
+    <div class="form" style="max-width:560px" id="authBox"></div>
+
+    <h3 class="sec">Save &amp; restore</h3>
+    <div class="form" style="max-width:560px">
+      <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:14px">Your world saves automatically as you play. Export to keep a copy or share your deck with others.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn ghost" id="expCards">Export cards</button>
+        <button class="btn ghost" id="expChron">Export Chronicle (.md)</button>
+        <button class="btn ghost" id="importBtn">Import cards</button>
+        <button class="btn ghost" id="expFull">Full backup</button>
+        <input type="file" id="importFile" accept="application/json">
+      </div>
+      <div class="save-flag" id="saveFlag" style="margin-top:12px"></div>
+    </div>
+
+    <h3 class="sec">Deck &amp; world</h3>
+    <div class="form" style="max-width:560px">
+      <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px">New starter cards arrive in updates. Pull them into your existing deck without disturbing your edits — or wipe everything and begin again.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn ghost" id="syncCards">Load new starter cards</button>
+        <button class="btn ghost" id="resetWorld">Start a fresh world</button>
+      </div>
+    </div>
+  </section>
+</div>
+<canvas id="panelCv" width="2400" height="3000"></canvas>
+
+<script>
+/* ===== storage ===== */
+const KEY="sortis:state:v2";
+const Store={
+  async load(){
+    try{ if(window.storage){const r=await window.storage.get(KEY);return r?JSON.parse(r.value):null;} }catch(e){}
+    try{ const v=localStorage.getItem(KEY); if(v) return JSON.parse(v); }catch(e){}
+    return null;
+  },
+  async save(st){
+    try{ if(window.storage){await window.storage.set(KEY,JSON.stringify(st));flag("saved");return;} }catch(e){}
+    try{ localStorage.setItem(KEY,JSON.stringify(st)); flag("saved"); return; }catch(e){}
+    flag("session only — export to keep");
+  }
+};
+function flag(t){document.getElementById('saveFlag').textContent=t;}
+
+/* ===== constants ===== */
+const CATLABEL={foundation:"Foundation",terrain:"Terrain",develop:"Develop",art:"Art",discovery:"Discovery",hero:"Hero",event:"Event",lore:"Lore",meta:"Meta",force:"Force"};
+const POP_TIERS=[['Camp',400],['Holdfast',800],['Reach',1200],['Bastion',2400]];
+const TERRAINS=['Ruins','Scarred','Drowned','Wilds','Other'];
+const THEMES=['Creation','Destruction','Faith','History','Prophecy','Betrayal','Relic','Other'];
+const QUOTES=[
+  "A world is built one panel at a time. Today, draw one.",
+  "The cards propose. You decide what it means.",
+  "Make something today that did not exist yesterday.",
+  "Chance is only chaos until a maker gives it shape.",
+  "Every great map began as a single, idle line.",
+  "You are not the author here. You are the witness who writes it down.",
+  "Creation asks only that you show up and turn the next card.",
+  "The blank panel is not empty. It is waiting.",
+  "Art is the argument that the world is worth recording.",
+  "Build slowly. A world has nowhere to be.",
+  "What you make today, someone may wander through for years.",
+  "There is no wrong card — only the world, becoming.",
+  "The smallest mark changes everything downstream.",
+  "Imperfect and finished beats perfect and imagined.",
+  "Let the deck surprise you. That is the whole point.",
+  "A daily line outlasts a grand intention.",
+  "Collage is only the world, reassembled by your hand.",
+  "Ruins are just beginnings wearing old clothes.",
+  "Draw the card. Trust the world. Make the mark.",
+  "Every hero, every flood, every city — yours to set down.",
+  "Creativity is a habit long before it is a gift.",
+  "The map remembers what the maker keeps.",
+  "Begin badly. Begin anyway. Just begin.",
+  "You owe the world nothing but your attention and a little ink.",
+  "To make is to refuse to let the day pass unmarked.",
+  "The hand that hesitates still has to move first.",
+];
+function pickQuote(){const q=document.getElementById('drawQuote');if(q)q.textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];}
+const CAP_TYPES=[['none','— log only —'],['panel','Panel'],['place','Place'],['grow','Grow a settlement'],['hero','Hero'],['lore','Lore entry'],['rule','World rule'],['event','Event (major)'],['journal','Journal entry']];
+function capDefault(cat){return ({foundation:'panel',terrain:'none',develop:'place',art:'none',discovery:'lore',hero:'hero',event:'event',lore:'journal',meta:'none',force:'event'})[cat]||'none';}
+function tierIndex(n){return POP_TIERS.findIndex(t=>t[0]===n);}
+function nextTier(n){const i=tierIndex(n);return i>=0&&i<POP_TIERS.length-1?POP_TIERS[i+1]:POP_TIERS[i];}
+
+/* ===== seed deck ===== */
+function seedDeck(){
+  const c=(title,category,number,color,instruction,o={})=>Object.assign({id:uid(),title,category,number,color,instruction,traits:o.traits||[],roll:o.roll||'',space:!!o.space,smin:o.smin||1,smax:o.smax||80,make:!!o.make,cap:o.cap||'',status:'active',drawn:0});
+  return [
+    c("Forgotten Ground","foundation",2,"black","Found a new panel from the ruins of a forgotten past."),
+    c("Scarred Earth","foundation",2,"red","Found a new panel of blasted, barren, irradiated land."),
+    c("The Drowned","foundation",3,"red","Found a new panel claimed by water — flooded city, swollen river, new coast."),
+    c("Reclaimed","foundation",2,"black","Found a new panel where nature has buried the old world."),
+
+    c("Body of Water","terrain",2,"red","Water claims part of this panel — lake, river, or flood. Cover the rolled sectors.",{space:true,smin:5,smax:80}),
+    c("Spreading Wood","terrain",1,"black","Forest takes root and spreads across the panel. Cover the rolled sectors.",{space:true,smin:3,smax:60}),
+    c("Tilled Land","terrain",1,"black","Someone works the earth — fields and farmland. Cover the rolled sectors.",{space:true,smin:2,smax:40}),
+    c("Risen Stone","terrain",2,"black","The land lifts — hills, highlands, broken peaks. Cover the rolled sectors.",{space:true,smin:3,smax:50}),
+    c("The Wastes","terrain",3,"red","Dead ground spreads — ash, salt, ruin. Cover the rolled sectors.",{space:true,smin:4,smax:70}),
+    c("Old Roads","terrain",1,"black","Trace the ruined infrastructure of the old world across the panel. Cover the rolled sectors.",{space:true,smin:1,smax:20}),
+
+    c("Resettlement","develop",2,"black","A people take root here. Found a Camp. The world ages one year.",{traits:['advance'],space:true,smin:1,smax:12}),
+    c("It Grows","develop",2,"black","A settlement swells. Grow it one tier (do this from the Atlas). The world ages one year.",{traits:['advance']}),
+    c("The Long Road","develop",3,"black","Connect this panel to another by road, rail, or route. The world ages one year.",{traits:['advance']}),
+    c("Monument","develop",1,"red","Raise a statue or monument — to whom, or to what? Cover the rolled sectors. Record it in the Lore. The world ages one year.",{traits:['advance','lore'],space:true,smin:1,smax:10}),
+    c("Hard Year","develop",2,"red","Hardship sweeps the region. The world ages one year and the living suffer.",{traits:['advance']}),
+
+    c("Personal Photograph","art",1,"black","Add a personal photo to this panel — yours, your family, a place you've stood."),
+    c("Words from a Letter","art",1,"black","Collage in text pulled from an email, a letter, or a message."),
+    c("Torn from the Page","art",1,"red","Work in text or images from an article, a magazine, or a book."),
+    c("Another's Hand","art",1,"red","Collage in a screenshot of another artist's work — credit them in your notes."),
+    c("Invert","art",1,"black","Invert the colours of part of this panel."),
+    c("Drain the Colour","art",1,"black","Render part of this panel in black and white."),
+    c("From the Archive","art",2,"red","Pull archived or found content onto the panel — old maps, documents, photographs."),
+    c("Render a Subject","art",1,"black","Depict a subject on this panel — stars, shapes, cars, animals, technology, man, woman, abstract, or nostalgia. Roll the dice or choose."),
+    c("Pure Form","art",1,"black","Add abstract form — geometry, colour, pattern — with nothing it represents."),
+    c("Nostalgia","art",1,"red","Add something that aches for the world-that-was — an object, a memory, a longing."),
+    c("Sacrifice","art",1,"red","Use a piece of your children's art on your panel today. Cover the rolled sectors.",{space:true,smin:20,smax:80}),
+
+    c("Ancient Tome","discovery",1,"red","A tome surfaces telling a story of — roll: Creation · Destruction · Faith · History · Prophecy · Betrayal. Write a Lore entry.",{traits:['lore'],roll:'d6'}),
+    c("Relic of the Old World","discovery",1,"black","An artifact of the world-that-was is unearthed. What is it, and what does it mean now? Write a Lore entry.",{traits:['lore']}),
+    c("Ruins Revealed","discovery",1,"black","Decide what a ruin on this panel once truly was. Annotate it."),
+
+    c("A Child Is Born","hero",1,"black","A hero is born on this panel. Roll a d10 for their nature — 1 villain, 10 paragon. Name them; record it.",{roll:'d10'}),
+    c("The Calling","hero",1,"red","A living, dormant hero answers a calling and steps onto the world stage. If none live nearby, it goes unanswered."),
+    c("Deeds Echo","hero",2,"black","An activated hero performs a deed that will be remembered. Write it into the Lore.",{traits:['lore']}),
+    c("A Hero Falls","hero",1,"red","Death comes for a hero on this panel. Mark one fallen (do this from the Atlas)."),
+
+    c("The Reckoning","event",2,"red","An event strikes this panel. Resolve it with the living heroes here — if none stand, it ends in ruin.",{roll:'d10'}),
+    c("Schism","event",2,"red","A settlement fractures over faith, power, or scarcity. Decide what's left standing.",{roll:'d10'}),
+    c("The Wanderer","event",1,"black","A stranger arrives bearing news, goods, or trouble.",{roll:'d10'}),
+    c("Plague Year","event",2,"red","Sickness sweeps the region. The world ages one year.",{traits:['advance'],roll:'d10'}),
+
+    c("The Rules Shift","meta",1,"black","Choose any one card and alter it — change its number or rewrite its instruction.",{traits:['meta']}),
+    c("Retire a Law","meta",1,"red","Send one card of your choice to the Retired pile.",{traits:['meta']}),
+    c("New Law","meta",1,"black","Forge one new card and add it to the deck — the world decides what kind.",{traits:['meta'],make:true}),
+    c("Shuffle","meta",0,"black","Shuffle the deck. The order means nothing here, but the gesture matters.",{traits:['meta']}),
+
+    c("Chronicle","lore",1,"black","Step back as an observer. Write a journal entry on the state of the world this year.",{traits:['lore']}),
+    c("A New Law of the World","lore",1,"red","Establish a new rule of this world — magic, gods, the shape of the year, the seasons, the fate of the dead. Add it to the World Rules.",{cap:'rule'}),
+    c("A Page of History","lore",1,"black","Set down a new piece of history. If the world is too young for history, write a piece of lore instead.",{traits:['lore'],cap:'lore'}),
+    c("A Religion Takes Hold","lore",1,"red","A new faith comes into being. Write its basic lore — its god or gods, its tenets, its faithful.",{traits:['lore'],cap:'lore'}),
+    c("A Legend Is Told","lore",1,"black","Write a legend for the lore books — a tale grown larger than the truth that birthed it.",{traits:['lore'],cap:'lore'}),
+    c("A Tragedy","lore",2,"red","Write a tragedy into the world's memory — a loss it will not forget.",{traits:['lore'],cap:'lore'}),
+    c("A Myth","lore",1,"black","Write a myth — a story the world tells to explain itself.",{traits:['lore'],cap:'lore'}),
+    c("Something Otherworldly","lore",2,"red","Record an otherworldly event — gods walking the earth, visitors from beyond, mythic beasts, giants risen.",{traits:['lore'],cap:'lore'}),
+  ];
+}
+
+/* ===== state ===== */
+let S={ meta:{world:'The Sortis Vellum',year:0,draws:0}, settings:{travelOdds:50},
+  deck:[], archive:[], panels:[], currentPanel:null, places:[], heroes:[], rules:[], log:[], loreSeq:{} };
+let current=null;
+function uid(){return Math.random().toString(36).slice(2,9);}
+
+async function boot(){
+  const saved=await Store.load();
+  if(saved && saved.deck){ S=saved; }
+  else { S.deck=seedDeck(); await persist(); }
+  S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
+  pickQuote();
+  renderAll();
+  initCloud();
+}
+async function persist(){ await Store.save(S); scheduleCloudPush(); }
+
+/* ===== Cloud sync (Supabase) — optional, degrades to local-only ===== */
+const CFG = window.SORTIS_CONFIG || {};
+let sb=null, sbUser=null, cloudReady=false, syncTimer=null;
+async function initCloud(){
+  if(!CFG.supabaseUrl || !CFG.supabaseAnonKey || !window.supabase) return; // no config / lib → local-only
+  try{
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    cloudReady = true;
+    const { data:{ session } } = await sb.auth.getSession();
+    sbUser = session ? session.user : null;
+    sb.auth.onAuthStateChange(async (_e, sess)=>{ const was=sbUser; sbUser = sess ? sess.user : null; renderAuth(); if(sbUser && !was) await pullCloud(); });
+    renderAuth();
+    if(sbUser) await pullCloud();
+  }catch(e){ console.warn('cloud init failed', e); }
+}
+async function pullCloud(){
+  if(!sb || !sbUser) return;
+  try{
+    const { data, error } = await sb.from('worlds').select('data').eq('user_id', sbUser.id).maybeSingle();
+    if(error) throw error;
+    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
+    else { await pushCloud(); } // first sign-in: seed the cloud from this device
+  }catch(e){ console.warn('cloud pull failed', e); }
+}
+async function pushCloud(){
+  if(!sb || !sbUser) return;
+  try{ await sb.from('worlds').upsert({ user_id: sbUser.id, data: S, updated_at: new Date().toISOString() }); flag('saved · cloud'); }
+  catch(e){ console.warn('cloud push failed', e); }
+}
+function scheduleCloudPush(){ if(!sb || !sbUser) return; clearTimeout(syncTimer); syncTimer=setTimeout(pushCloud, 1200); }
+async function signInGoogle(){ if(sb) await sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin } }); }
+async function signInEmail(email){ if(sb){ await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin } }); const m=document.getElementById('authMsg'); if(m)m.textContent='Check your email for the sign-in link.'; } }
+async function signOut(){ if(sb){ await sb.auth.signOut(); sbUser=null; renderAuth(); } }
+function renderAuth(){
+  const box=document.getElementById('authBox'); if(!box) return;
+  if(!cloudReady){ box.innerHTML='<div class="cloud-note">Cloud sync isn\'t set up yet. Add your Supabase keys in <code>config.js</code> to sign in and sync across devices.</div>'; return; }
+  if(!sbUser){
+    box.innerHTML='<div class="cloud-note">Sign in to sync your world across every device.</div>'+
+      '<button class="btn" id="btnGoogle" style="width:100%;margin-bottom:10px">Sign in with Google</button>'+
+      '<div style="display:flex;gap:8px"><input type="email" id="otpEmail" placeholder="…or your email for a magic link" style="flex:1"><button class="btn ghost" id="btnOtp">Send link</button></div>'+
+      '<div class="cloud-msg" id="authMsg"></div>';
+    document.getElementById('btnGoogle').onclick=signInGoogle;
+    document.getElementById('btnOtp').onclick=()=>{const em=(document.getElementById('otpEmail').value||'').trim();if(em)signInEmail(em);};
+  } else {
+    box.innerHTML='<div class="cloud-note">Signed in as <b>'+esc(sbUser.email||'your account')+'</b> · your world syncs automatically.</div>'+
+      '<div style="display:flex;gap:8px"><button class="btn ghost" id="btnSyncNow">Sync now</button><button class="btn ghost" id="btnSignOut">Sign out</button></div>'+
+      '<div class="cloud-msg" id="authMsg"></div>';
+    document.getElementById('btnSyncNow').onclick=async()=>{await pushCloud();const m=document.getElementById('authMsg');if(m)m.textContent='Synced.';};
+    document.getElementById('btnSignOut').onclick=signOut;
+  }
+}
+
+function syncStarterCards(){
+  const have=new Set([...S.deck,...S.archive].map(c=>c.title));
+  const additions=seedDeck().filter(c=>!have.has(c.title));
+  if(!additions.length){ alert('Your deck already has all the latest starter cards.'); return; }
+  additions.forEach(c=>S.deck.push(c));
+  persist(); renderDeck();
+  alert('Added '+additions.length+' new card'+(additions.length===1?'':'s')+' to your deck: '+additions.map(c=>c.title).join(', '));
+}
+function resetWorld(){
+  if(!confirm('Start a fresh world? This erases your panels, places, heroes, world rules, chronicle, and any deck edits, and reseeds the starter deck. Export a backup first if you want to keep this one.')) return;
+  const world=S.meta.world||'The Sortis Vellum';
+  S={ meta:{world,year:0,draws:0}, settings:{travelOdds:50}, deck:seedDeck(), archive:[], panels:[], currentPanel:null, places:[], heroes:[], rules:[], log:[], loreSeq:{} };
+  persist(); pickQuote(); renderAll(); switchView('draw');
+}
+
+/* ===== helpers ===== */
+function val(id){const e=document.getElementById(id);return e?(''+e.value).trim():'';}
+function setVal(id,v){const e=document.getElementById(id);if(e)e.value=v;}
+function esc(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function normCoord(nm,nd,em,ed){ if(nm===0)nd='N'; if(em===0)ed='E'; const pretty=nd+nm+' '+ed+em; return {pretty,nospace:pretty.replace(/\s+/g,''),link:'[['+pretty+']]'}; }
+function capCoord(){ return normCoord(Math.max(0,parseInt(val('capNsMag'))||0),val('capNsDir')||'N',Math.max(0,parseInt(val('capEwMag'))||0),val('capEwDir')||'E'); }
+
+/* ===== render shell ===== */
+function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderWorldRules();}
+function renderWorldRules(){
+  const list=document.getElementById('ruleList'); if(!list) return;
+  document.getElementById('ruleCount').textContent = S.rules.length? (S.rules.length+(S.rules.length===1?' rule':' rules')) : 'empty';
+  list.innerHTML = S.rules.length ? S.rules.map((r,i)=>`
+    <div class="row">
+      <div class="rnum" style="color:var(--gold)">§</div>
+      <div><div class="rtitle" style="font-size:15px">${esc(r.text)}</div><div class="rmeta">established Year ${r.year}</div></div>
+      <div class="rowacts"><button class="mini danger" data-rrm="${i}">Remove</button></div>
+    </div>`).join('') : '<div class="empty">No world rules yet. The world is still deciding what it is.</div>';
+  list.querySelectorAll('[data-rrm]').forEach(b=>b.onclick=()=>{if(confirm('Remove this world rule?')){S.rules.splice(+b.dataset.rrm,1);persist();renderWorldRules();}});
+}
+function renderHeader(){
+  document.getElementById('worldName').textContent=S.meta.world;
+  document.getElementById('hYear').textContent='Yr '+S.meta.year;
+  document.getElementById('hDraws').textContent=S.meta.draws;
+  document.getElementById('hCur').textContent=S.currentPanel||'—';
+  const sw=document.getElementById('setWorld'); if(sw && document.activeElement!==sw) sw.value=S.meta.world;
+  if(!current){ const ds=document.getElementById('drawStage'); if(ds && !ds.querySelector('.card-face')) resetStage(); }
+}
+
+/* ===== ATLAS ===== */
+function addPanel(coord,terrain,year){
+  if(S.panels.find(p=>p.coord===coord)) return false;
+  S.panels.push({coord,terrain:(terrain||'Ruins').toLowerCase(),founded:year,gen:1,order:S.panels.length});
+  S.currentPanel=coord; return true;
+}
+function renderAtlas(){
+  document.getElementById('atlasCur').textContent = S.currentPanel? ('On '+S.currentPanel) : 'No panels yet';
+  const odds=document.getElementById('oddsRange'); if(odds){ odds.value=S.settings.travelOdds; document.getElementById('oddsVal').textContent=S.settings.travelOdds+'% travel · '+(100-S.settings.travelOdds)+'% stay';
+    odds.oninput=()=>{ S.settings.travelOdds=+odds.value; document.getElementById('oddsVal').textContent=odds.value+'% travel · '+(100-odds.value)+'% stay'; persist(); }; }
+  document.getElementById('panelCount').textContent = S.panels.length?('· '+S.panels.length):'';
+  // panels
+  const pl=document.getElementById('panelList');
+  pl.innerHTML = S.panels.length ? S.panels.map(p=>`
+    <div class="row">
+      <div class="rnum black">▣</div>
+      <div><div class="rtitle">${esc(p.coord)} ${p.coord===S.currentPanel?'<span class="pill cur" style="margin-left:6px">current</span>':''}</div>
+        <div class="rmeta">${esc(p.terrain)} · founded Yr ${p.founded} · gen ${p.gen}</div></div>
+      <div class="rowacts">
+        ${p.coord!==S.currentPanel?`<button class="mini" data-pcur="${esc(p.coord)}">Set current</button>`:''}
+        <button class="mini" data-pgen="${esc(p.coord)}">Gen +1</button>
+        <button class="mini go" data-pdl="${esc(p.coord)}">PNG</button>
+      </div>
+    </div>`).join('') : '<div class="empty">No panels yet. Forge one above, or draw a Foundation card.</div>';
+  pl.querySelectorAll('[data-pcur]').forEach(b=>b.onclick=()=>{S.currentPanel=b.dataset.pcur;persist();renderHeader();renderAtlas();});
+  pl.querySelectorAll('[data-pgen]').forEach(b=>b.onclick=()=>{const p=S.panels.find(x=>x.coord===b.dataset.pgen);if(p){p.gen=(p.gen||1)+1;persist();renderAtlas();}});
+  pl.querySelectorAll('[data-pdl]').forEach(b=>b.onclick=()=>downloadPanel(b.dataset.pdl));
+  // places
+  const plc=document.getElementById('placeList');
+  plc.innerHTML = S.places.length ? S.places.map((p,i)=>`
+    <div class="row">
+      <div class="rnum">${p.kind==='settlement'?'⌂':(p.kind==='monument'?'†':'∿')}</div>
+      <div><div class="rtitle">${esc(p.name)}</div>
+        <div class="rmeta">${esc(p.kind)} · ${esc(p.panel)}${p.tier?(' · '+p.tier+' ('+p.pop+')'):''} · Yr ${p.founded}</div></div>
+      <div class="rowacts">${p.kind==='settlement'&&tierIndex(p.tier)<POP_TIERS.length-1?`<button class="mini go" data-grow="${i}">Grow →</button>`:''}</div>
+    </div>`).join('') : '<div class="empty">No places yet.</div>';
+  plc.querySelectorAll('[data-grow]').forEach(b=>b.onclick=()=>{const p=S.places[+b.dataset.grow];const [tn,tp]=nextTier(p.tier);p.tier=tn;p.pop=tp;persist();renderAtlas();});
+  // heroes
+  const hl=document.getElementById('heroList');
+  hl.innerHTML = S.heroes.length ? S.heroes.map((h,i)=>`
+    <div class="row">
+      <div class="rnum ${h.alignment<=3?'red':''}">${h.alignment}</div>
+      <div><div class="rtitle">${esc(h.name)} ${h.status==='fallen'?'<span class="tag" style="border-color:var(--ash-dim);color:var(--ash-dim)">fallen</span>':''}</div>
+        <div class="rmeta">${h.alignment<=3?'villain':(h.alignment>=8?'paragon':'unproven')} · born ${esc(h.panel)} · Yr ${h.born}</div></div>
+      <div class="rowacts"><button class="mini ${h.status==='alive'?'danger':''}" data-htog="${i}">${h.status==='alive'?'Mark fallen':'Revive'}</button></div>
+    </div>`).join('') : '<div class="empty">No heroes yet.</div>';
+  hl.querySelectorAll('[data-htog]').forEach(b=>b.onclick=()=>{const h=S.heroes[+b.dataset.htog];h.status=h.status==='alive'?'fallen':'alive';persist();renderAtlas();});
+}
+document.getElementById('fpAdd').onclick=()=>{
+  const co=normCoord(Math.max(0,parseInt(val('fpNs'))||0),val('fpNsD'),Math.max(0,parseInt(val('fpEw'))||0),val('fpEwD'));
+  if(addPanel(co.pretty,val('fpTer'),S.meta.year)){ persist(); renderHeader(); renderAtlas(); }
+  else alert('That panel already exists.');
+};
+
+/* ===== panel canvas (forge) ===== */
+function drawPanelCanvas(s){
+  const cv=document.getElementById('panelCv'),ctx=cv.getContext('2d'),W=2400,H=3000,IN=300;
+  const RR=(x,y,w,h,r)=>{ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();};
+  ctx.fillStyle='#ece4d1';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(120,100,70,0.10)';ctx.lineWidth=1;
+  for(let x=IN/4;x<W;x+=IN/4){ctx.beginPath();ctx.moveTo(x+.5,0);ctx.lineTo(x+.5,H);ctx.stroke();}
+  for(let y=IN/4;y<H;y+=IN/4){ctx.beginPath();ctx.moveTo(0,y+.5);ctx.lineTo(W,y+.5);ctx.stroke();}
+  ctx.strokeStyle='rgba(92,70,45,0.32)';ctx.lineWidth=2;
+  for(let x=IN;x<W;x+=IN){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=IN;y<H;y+=IN){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.strokeStyle='#3a2f1f';ctx.lineWidth=6;ctx.strokeRect(18,18,W-36,H-36);ctx.lineWidth=2;ctx.strokeRect(40,40,W-80,H-80);
+  ctx.save();ctx.fillStyle='#3a2f1f';ctx.font='600 64px Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';const pad=92;
+  const chip=(x,y)=>{ctx.save();ctx.fillStyle='rgba(236,228,209,0.92)';ctx.beginPath();ctx.arc(x,y,46,0,7);ctx.fill();ctx.strokeStyle='#3a2f1f';ctx.lineWidth=2;ctx.stroke();ctx.restore();};
+  [['N',W/2,pad],['S',W/2,H-pad],['W',pad,H/2],['E',W-pad,H/2]].forEach(([t,x,y])=>{chip(x,y);ctx.fillStyle='#3a2f1f';ctx.fillText(t,x,y+2);});ctx.restore();
+  (function(cx,cy,r){ctx.save();ctx.translate(cx,cy);ctx.strokeStyle='rgba(58,47,31,0.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*0.62,0,7);ctx.stroke();
+    const point=(ang,len,wid,fill)=>{ctx.save();ctx.rotate(ang);ctx.beginPath();ctx.moveTo(0,-len);ctx.lineTo(wid,0);ctx.lineTo(0,len*0.12);ctx.lineTo(-wid,0);ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle='#3a2f1f';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();};
+    for(let i=0;i<4;i++)point(Math.PI/4+i*Math.PI/2,r*0.78,16,'rgba(58,47,31,0.18)');
+    point(0,r*0.95,26,'#9c3a2f');point(Math.PI,r*0.95,26,'#3a2f1f');point(Math.PI/2,r*0.95,26,'#3a2f1f');point(-Math.PI/2,r*0.95,26,'#3a2f1f');
+    ctx.beginPath();ctx.arc(0,0,12,0,7);ctx.fillStyle='#b0892f';ctx.fill();ctx.strokeStyle='#3a2f1f';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#9c3a2f';ctx.font='600 38px Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('N',0,-r-30);ctx.restore();})(W-250,250,120);
+  const bw=440,bh=176,x=60,y=H-60-bh;ctx.save();ctx.fillStyle='rgba(236,228,209,0.94)';RR(x,y,bw,bh,8);ctx.fill();ctx.strokeStyle='#3a2f1f';ctx.lineWidth=3;RR(x,y,bw,bh,8);ctx.stroke();ctx.lineWidth=1;RR(x+9,y+9,bw-18,bh-18,5);ctx.stroke();
+  const px=x+34;ctx.fillStyle='#7a3320';ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.font='600 80px Georgia, serif';ctx.fillText(s.coord,px,y+98);
+  ctx.strokeStyle='rgba(58,47,31,0.4)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,y+120);ctx.lineTo(x+bw-34,y+120);ctx.stroke();
+  ctx.fillStyle='#6a5f49';ctx.font='600 28px monospace';ctx.fillText('YR '+s.founded+'   ·   GEN '+(s.gen||1),px,y+152);ctx.restore();
+  return cv;
+}
+function downloadPanel(coord){
+  const p=S.panels.find(x=>x.coord===coord); if(!p)return;
+  const cv=drawPanelCanvas(p);
+  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='panel_'+coord.replace(/\s/g,'')+'_gen'+(p.gen||1)+'.png';a.click();},'image/png');
+}
+
+/* ===== DECK list ===== */
+let deckFilter='all', deckQuery='';
+function renderDeck(){
+  const fb=document.getElementById('deckFilters');
+  const cats=['all',...Object.keys(CATLABEL)];
+  fb.innerHTML=cats.map(k=>`<button class="tag ${deckFilter===k?'gold':'cat'}" data-f="${k}" style="cursor:pointer;background:none">${k==='all'?'All':CATLABEL[k]}</button>`).join('');
+  fb.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{deckFilter=b.dataset.f;renderDeck();});
+  const list=document.getElementById('deckList');
+  const q=deckQuery;
+  const cards=S.deck.filter(c=>{
+    if(deckFilter!=='all'&&c.category!==deckFilter) return false;
+    if(!q) return true;
+    return (c.title+' '+c.instruction+' '+(CATLABEL[c.category]||c.category)+' '+(c.traits||[]).join(' ')+(c.space?' sectors':'')+(c.roll||'')).toLowerCase().includes(q);
+  });
+  list.innerHTML=cards.length?cards.map(c=>rowHTML(c,false)).join(''):'<div class="empty">No cards match.</div>';
+  bindRows(list,false);
+}
+function renderArchive(){
+  const list=document.getElementById('archiveList');
+  list.innerHTML=S.archive.length?S.archive.map(c=>rowHTML(c,true)).join(''):'<div class="empty">No retired cards.</div>';
+  bindRows(list,true);
+}
+function rowHTML(c,arch){
+  let tags=(c.traits||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  if(c.category==='event'&&!(c.traits||[]).includes('lore')) tags+='<span class="tag">lore</span>';
+  const roll=c.roll?`<span class="tag">${c.roll}</span>`:(c.category==='event'?'<span class="tag">d10</span>':'');
+  const sp=c.space?`<span class="tag sp">${c.smin}–${c.smax} sectors</span>`:'';
+  const cat=`<span class="tag cat ${c.category==='hero'?'gold':''}">${CATLABEL[c.category]||c.category}</span>`;
+  return `<div class="row" data-id="${c.id}">
+    <div class="rnum ${c.color}">${c.number}</div>
+    <div><div class="rtitle">${esc(c.title)}</div>
+      <div class="rmeta">${cat}${tags}${roll}${sp}</div>
+      <div class="rinstr">${esc(c.instruction)}</div></div>
+    <div class="rowacts">${arch?'<button class="mini" data-act="restore">Restore</button>':'<button class="mini" data-act="edit">Edit</button><button class="mini danger" data-act="retire">Retire</button>'}</div></div>`;
+}
+function bindRows(scope,arch){
+  scope.querySelectorAll('.row').forEach(r=>{const id=r.dataset.id;
+    r.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='retire')retire(id);else if(a==='restore')restore(id);else if(a==='edit')editCard(id);});});
+}
+function retire(id){const i=S.deck.findIndex(c=>c.id===id);if(i<0)return;const c=S.deck.splice(i,1)[0];c.status='archived';S.archive.unshift(c);persist();renderDeck();renderArchive();}
+function restore(id){const i=S.archive.findIndex(c=>c.id===id);if(i<0)return;const c=S.archive.splice(i,1)[0];c.status='active';S.deck.push(c);persist();renderDeck();renderArchive();}
+
+/* ===== CHRONICLE ===== */
+function renderLog(){
+  const list=document.getElementById('logList');
+  if(!S.log.length){list.innerHTML='<div class="empty">The chronicle is empty. Draw a card to begin the world.</div>';return;}
+  list.innerHTML=S.log.slice().reverse().map(e=>{
+    const notes=(e.notes||[]).map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
+    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}</div>`;
+  }).join('');
+}
+
+/* ===== DRAW ===== */
+function eligible(card){
+  const np=S.panels.length;
+  switch(card.category){
+    case 'foundation': return true;            // ground can always be made
+    case 'meta': return true;                  // the deck can always rewrite itself
+    case 'terrain': case 'develop': case 'art': case 'discovery': case 'lore': case 'force':
+    case 'hero': case 'event': return np>=1;   // these need somewhere to happen
+    default: return true;
+  }
+}
+function drawCard(){
+  const pool=S.deck.filter(eligible);
+  if(!pool.length){
+    document.getElementById('drawStage').innerHTML=`<div class="empty" style="max-width:330px">The world is empty. Forge a panel in the <b>Atlas</b>, or draw a Foundation card, before the rest of the deck can act.</div>`;
+    return;
+  }
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  pick.drawn=(pick.drawn||0)+1; S.meta.draws++;
+  current={card:pick,year:S.meta.year,notes:[],advanced:false};
+  const t=resolveTravel(pick);
+  current.travel=t;
+  current.sectors = pick.space ? (pick.smin+Math.floor(Math.random()*(pick.smax-pick.smin+1))) : null;
+  if(t.moved) current.notes.push('Travelled '+t.steps+' '+(t.dir>0?'clockwise':'counter')+' → now on '+t.to);
+  else if(t.stay && !t.foundation) current.notes.push('Stayed on '+(S.currentPanel||'—'));
+  if(current.sectors!=null) current.notes.push('Sectors: '+current.sectors);
+  renderHeader();
+  showCard(pick);
+  persist();
+}
+function resolveTravel(card){
+  if(card.category==='foundation') return {foundation:true};
+  if(S.panels.length<=1) return {stay:true,reason:'nowhere'};
+  const travel = Math.random() < (S.settings.travelOdds/100);
+  if(!travel) return {stay:true};
+  const steps=card.number||0;
+  if(steps===0) return {stay:true,held:true};
+  let idx=S.panels.findIndex(p=>p.coord===S.currentPanel); if(idx<0)idx=0;
+  const dir=card.color==='black'?1:-1,len=S.panels.length;
+  idx=((idx+dir*steps)%len+len)%len;
+  const to=S.panels[idx].coord; S.currentPanel=to;
+  return {moved:true,to,steps,dir};
+}
+
+function showCard(c){
+  const stage=document.getElementById('drawStage');
+  const traitSet=new Set(c.traits||[]);
+  const dir=c.color==='red'?'Counter-clockwise':'Clockwise';
+  const effRoll=c.roll||(c.category==='event'?'d10':'');
+  // travel + sector banners
+  const t=current.travel;
+  let travelHtml='';
+  if(t.foundation) travelHtml=`<div class="meta-chip travel move"><div class="ml">New Ground</div><div class="mv">Found it</div><div class="msub">becomes your current panel</div></div>`;
+  else if(t.moved) travelHtml=`<div class="meta-chip travel move"><div class="ml">Travel</div><div class="mv">→ ${esc(t.to)}</div><div class="msub">moved ${t.steps} ${t.dir>0?'clockwise':'counter'}</div></div>`;
+  else travelHtml=`<div class="meta-chip travel stay"><div class="ml">Travel</div><div class="mv">Stay</div><div class="msub">${t.reason==='nowhere'?'nowhere to go yet':'work the current panel'}</div></div>`;
+  const sectorHtml = current.sectors!=null ? `<div class="meta-chip sectors"><div class="ml">Sectors</div><div class="mv">${current.sectors}</div><div class="msub">of 80 · cover this many</div></div>` : '';
+
+  let extras='';
+  if(effRoll)extras+=`<button class="act roll" id="aRoll">Roll ${effRoll}</button>`;
+  if(traitSet.has('advance'))extras+=`<button class="act year" id="aYear">Advance the year (+1)</button>`;
+  const defType=c.cap||capDefault(c.category);
+
+  const capInner = c.make ? makeForgeHTML() : `
+      <h4>Capture for the vault</h4>
+      <div class="cap-row"><label>Capture as</label>
+        <select id="capType">${CAP_TYPES.map(([v,l])=>`<option value="${v}" ${v===defType?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div id="capFields"></div>
+      <button class="cap-build" id="capBuild">Build note</button>
+      <div class="cap-out" id="capOut">
+        <div class="cap-title" id="capTitle"></div>
+        <textarea id="capText" readonly></textarea>
+        <div class="cap-tools"><button id="capCopy">Copy</button><button id="capDl">Download .md</button></div>
+        <div class="cap-msg" id="capMsg"></div>
+      </div>`;
+
+  stage.innerHTML=`
+    <div class="working">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b></div>
+    <div class="draw-meta">${travelHtml}${sectorHtml}</div>
+    <div class="card-face">
+      <div class="card-num ${c.color}">${c.number}</div>
+      <span class="card-seal">${CATLABEL[c.category]||c.category}</span>
+      <div class="card-title">${esc(c.title)}</div>
+      <div class="card-instr">${esc(c.instruction)}</div>
+      <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
+    </div>
+    <div class="card-actions">${extras}
+      <button class="act done" id="aDone">Complete & log</button>
+      <button class="act" id="aRedraw">Draw again</button></div>
+    <div class="resolve" id="resolveBox"></div>
+    <div class="capture">${capInner}</div>`;
+
+  const rb=document.getElementById('resolveBox');
+  if(effRoll){
+    document.getElementById('aRoll').onclick=()=>{
+      const max=parseInt(effRoll.slice(1),10),v=1+Math.floor(Math.random()*max);
+      let read='',tone='';
+      if(effRoll==='d10'&&c.category==='hero'){read=v<=3?'A villain rises':(v>=8?'A paragon':'Conflicted, unproven');tone=v<=3?'ill':(v>=8?'good':'');setVal('capAlign',v);}
+      else if(effRoll==='d10'&&c.category==='event'){read=v<=3?'It goes badly — ruin or loss':(v>=8?'It turns out well':'Uncertain — the heroes here decide it');tone=v<=3?'ill':(v>=8?'good':'');setVal('capOutcome',read);}
+      rb.innerHTML=`<div class="roll-result ${tone}"><div class="roll-die">${effRoll}</div><div class="roll-val">${v}</div>${read?`<div class="roll-read">${read}</div>`:''}</div>`;
+      current.lastRoll={spec:effRoll,value:v,read};
+    };
+  }
+  if(traitSet.has('advance')){
+    document.getElementById('aYear').onclick=()=>{
+      if(current.advanced)return;
+      S.meta.year++;current.year=S.meta.year;current.advanced=true;renderHeader();
+      const b=document.getElementById('aYear');b.textContent='Year advanced ✓';b.disabled=true;
+    };
+  }
+  if(c.make){
+    wireMakeForge();
+  } else {
+    renderCaptureFields(defType);
+    document.getElementById('capType').onchange=e=>{renderCaptureFields(e.target.value);document.getElementById('capOut').classList.remove('show');document.getElementById('capBuild').textContent = e.target.value==='event'?'Generate Vault Entry':'Build note';};
+    document.getElementById('capBuild').textContent = defType==='event'?'Generate Vault Entry':'Build note';
+    document.getElementById('capBuild').onclick=doBuildNote;
+    document.getElementById('capCopy').onclick=()=>{const tx=document.getElementById('capText');tx.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(tx.value).catch(()=>{});ok=true;}document.getElementById('capMsg').textContent=ok?'Copied — paste into your vault.':'Select the text and copy.';};
+    document.getElementById('capDl').onclick=()=>{const name=((current.pendingCapture&&current.pendingCapture.title)||'note').replace(/[\\/:*?"<>|]/g,'');const blob=new Blob([document.getElementById('capText').value],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'.md';a.click();};
+  }
+  document.getElementById('aRedraw').onclick=()=>{resetStage();drawCard();};
+  document.getElementById('aDone').onclick=completeDraw;
+}
+
+function coordWidget(){const cur=S.currentPanel?parseCoord(S.currentPanel):{nm:0,nd:'N',em:0,ed:'E'};
+  return `<div class="cap-row"><label>Coordinate (defaults to current panel)</label>
+    <div class="cap-coord">
+      <input type="number" id="capNsMag" value="${cur.nm}" min="0"><select id="capNsDir"><option ${cur.nd==='N'?'selected':''}>N</option><option ${cur.nd==='S'?'selected':''}>S</option></select>
+      <input type="number" id="capEwMag" value="${cur.em}" min="0"><select id="capEwDir"><option ${cur.ed==='E'?'selected':''}>E</option><option ${cur.ed==='W'?'selected':''}>W</option></select>
+    </div></div>`;
+}
+function parseCoord(str){const m=str.match(/([NS])(\d+)\s+([EW])(\d+)/);return m?{nd:m[1],nm:+m[2],ed:m[3],em:+m[4]}:{nm:0,nd:'N',em:0,ed:'E'};}
+function selRow(id,label,opts,sel){return `<div class="cap-row"><label>${label}</label><select id="${id}">`+opts.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('')+`</select></div>`;}
+function txtRow(id,label,ph){return `<div class="cap-row"><label>${label}</label><input type="text" id="${id}" placeholder="${ph||''}"></div>`;}
+
+function makeForgeHTML(){
+  const cats=['foundation','terrain','develop','art','discovery','hero','event','lore'];
+  const rc=cats[Math.floor(Math.random()*cats.length)];
+  const rs=Math.floor(Math.random()*4);              // 0–3 steps
+  const ri=Math.random()<0.5?'black':'red';
+  current.makeSeed={cat:rc,steps:rs,ink:ri};
+  const catOpts=Object.keys(CATLABEL).map(k=>`<option value="${k}" ${k===rc?'selected':''}>${CATLABEL[k]}</option>`).join('');
+  return `
+    <h4>New Law — forge a card</h4>
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash);margin:-4px 0 12px">The world has chosen its <b style="color:var(--gold)">kind</b>, <b style="color:var(--gold)">steps</b>, and <b style="color:var(--gold)">ink</b>. You give it a name and a law.</div>
+    <div class="cap-row" style="display:grid;grid-template-columns:1fr 70px 1fr;gap:8px">
+      <div><label>Kind</label><select id="mkCat">${catOpts}</select></div>
+      <div><label>Steps</label><input type="number" id="mkNum" value="${rs}" min="0" max="9"></div>
+      <div><label>Ink</label><select id="mkColor"><option value="black" ${ri==='black'?'selected':''}>Black</option><option value="red" ${ri==='red'?'selected':''}>Red</option></select></div>
+    </div>
+    <div class="cap-row"><label>Title</label><input type="text" id="mkTitle" placeholder="Name this card"></div>
+    <div class="cap-row"><label>Instruction</label><textarea id="mkInstr" placeholder="What the explorer does when this turns up."></textarea></div>
+    <div class="cap-row"><label>Traits</label>
+      <div class="checks" style="gap:12px">
+        <label><input type="checkbox" id="mkAdvance"> Advance year</label>
+        <label><input type="checkbox" id="mkLore"> Lore</label>
+        <label><input type="checkbox" id="mkRoll"> Roll d10</label>
+        <label><input type="checkbox" id="mkSpace"> Sectors</label>
+      </div>
+      <div class="split2" id="mkRange" style="display:none;margin-top:8px">
+        <div><label>Min</label><input type="number" id="mkSmin" value="1" min="1" max="80"></div>
+        <div><label>Max</label><input type="number" id="mkSmax" value="80" min="1" max="80"></div>
+      </div>
+    </div>
+    <button class="cap-build" id="mkAdd">Add this card to the deck</button>
+    <div class="cap-msg" id="mkMsg"></div>`;
+}
+function wireMakeForge(){
+  const sp=document.getElementById('mkSpace');
+  sp.onchange=()=>{document.getElementById('mkRange').style.display=sp.checked?'grid':'none';};
+  document.getElementById('mkAdd').onclick=()=>{
+    const space=sp.checked;
+    const card={id:uid(),status:'active',drawn:0,
+      title:val('mkTitle')||'Untitled Law',category:val('mkCat'),number:parseInt(val('mkNum'),10)||0,color:val('mkColor'),
+      instruction:val('mkInstr'),traits:[].concat(document.getElementById('mkAdvance').checked?['advance']:[],document.getElementById('mkLore').checked?['lore']:[]),
+      roll:document.getElementById('mkRoll').checked?'d10':'',space,smin:space?Math.max(1,parseInt(val('mkSmin'))||1):1,smax:space?Math.min(80,parseInt(val('mkSmax'))||80):80,make:false};
+    S.deck.push(card);
+    current.madeCard=card.title;
+    document.getElementById('mkMsg').textContent='Added “'+card.title+'” to the deck.';
+    document.getElementById('mkAdd').disabled=true;
+    renderDeck();persist();
+  };
+}
+function renderCaptureFields(type){
+  const box=document.getElementById('capFields');if(!box)return;let html='';
+  if(type==='panel'){html=coordWidget()+selRow('capTerrain','Terrain',TERRAINS,'Ruins');}
+  else if(type==='place'){html=txtRow('capName','Name','e.g. Ashfall')+selRow('capKind','Kind',['Settlement','Road','Monument'],'Settlement')+coordWidget();}
+  else if(type==='grow'){
+    const setts=S.places.filter(p=>p.kind==='settlement'&&tierIndex(p.tier)<POP_TIERS.length-1);
+    html = setts.length? `<div class="cap-row"><label>Settlement to grow</label><select id="capGrow">`+setts.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} — ${p.tier} → ${nextTier(p.tier)[0]}</option>`).join('')+`</select></div>` : `<div class="cap-row" style="font-family:var(--mono);font-size:11px;color:var(--ash-dim)">No settlements that can grow yet.</div>`;
+  }
+  else if(type==='hero'){const a=current&&current.lastRoll?current.lastRoll.value:'';html=txtRow('capName','Name','e.g. Vaelin Cross')+`<div class="cap-row"><label>Alignment (1 villain – 10 paragon)</label><input type="number" id="capAlign" min="1" max="10" value="${a}"></div>`+coordWidget();}
+  else if(type==='lore'){html=selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget();}
+  else if(type==='rule'){html=`<div class="cap-row"><label>The new rule</label><input type="text" id="capRule" placeholder="e.g. The year turns in three seasons."></div><div class="cap-row"><label>Elaboration (optional)</label><textarea id="capRuleBody" placeholder="How it works, what it means for the world…"></textarea></div>`;}
+  else if(type==='event'){const o=current&&current.lastRoll?current.lastRoll.read:'';html=txtRow('capTitle','Event title','e.g. The Ashfall Reckoning')+coordWidget()+txtRow('capHeroes','Heroes involved (comma-separated, optional)','Vaelin Cross, Mara')+`<div class="cap-row"><label>What took place</label><input type="text" id="capOutcome" value="${o}" placeholder="A one-line summary"></div><div class="cap-row"><label>Detailed account</label><textarea id="capDetail" placeholder="The full account, as the explorer records it…"></textarea></div>`;}
+  else if(type==='journal'){html=`<div class="cap-row"><label>Entry</label><textarea id="capBody" placeholder="The state of the world, as an observer…"></textarea></div>`;}
+  else{html=`<div class="cap-row" style="color:var(--ash-dim);font-family:var(--mono);font-size:11px;letter-spacing:1px">No note — this draw is only logged to the Chronicle.</div>`;}
+  box.innerHTML=html;
+  document.getElementById('capBuild').style.display=(type==='none')?'none':'block';
+}
+
+function buildNote(type){
+  const y=current.year;
+  if(type==='panel'){const co=capCoord(),ter=val('capTerrain')||'Ruins';
+    const md=['---','type: panel','coord: '+co.pretty,'terrain: '+ter.toLowerCase(),'founded: '+y,'generation: 1','tags: [panel, year/'+y+']','---','# '+co.pretty,'> '+ter+' · founded **Year '+y+'**','','## Heroes','','## Places','','## Lore',''].join('\n');
+    return {title:co.pretty,md,summary:'Panel '+co.pretty+' founded ('+ter+')',commit:{kind:'panel',coord:co.pretty,terrain:ter}};}
+  if(type==='place'){const co=capCoord(),name=val('capName')||'Unnamed',kind=val('capKind')||'Settlement';let pop='',line='';
+    if(kind==='Settlement'){const[tn,tp]=POP_TIERS[0];pop='population: '+tp+'\ntier: '+tn+'\n';line=' · pop. **'+tp+'** ('+tn+')';}
+    const md=['---','type: place','kind: '+kind.toLowerCase(),'panel: "'+co.link+'"','founded: '+y].concat(pop?pop.trim().split('\n'):[]).concat(['tags: [place/'+kind.toLowerCase()+', year/'+y+']','---','# '+name,'> '+kind+' on '+co.link+' · founded **Year '+y+'**'+line,'','*(notes)*','']).join('\n');
+    return {title:name,md,summary:kind+' “'+name+'” on '+co.pretty,commit:{kind:'place',name,placeKind:kind.toLowerCase(),coord:co.pretty,link:co.link}};}
+  if(type==='grow'){const name=val('capGrow');const p=S.places.find(x=>x.name===name);if(!p)return null;const[tn,tp]=nextTier(p.tier);
+    const md=['---','type: place','kind: settlement','panel: "[['+p.panel.replace(/[\[\]]/g,'')+']]"','founded: '+p.founded,'population: '+tp,'tier: '+tn,'tags: [place/settlement, year/'+p.founded+']','---','# '+name,'> Settlement on [['+p.panel.replace(/[\[\]]/g,'')+']] · grew to **'+tn+'** ('+tp+') in **Year '+y+'**','','*(notes)*',''].join('\n');
+    return {title:name,md,summary:name+' grew → '+tn+' ('+tp+')',commit:{kind:'grow',name}};}
+  if(type==='hero'){const co=capCoord(),name=val('capName')||'Unnamed',align=Math.min(10,Math.max(1,parseInt(val('capAlign'))||5));
+    const moral=align<=3?'villain':(align>=8?'hero':'unproven'),read=align<=3?'a villain rises':(align>=8?'a paragon':'conflicted, unproven');
+    const md=['---','type: hero','alignment: '+align,'status: alive','born: '+y,'panel: "'+co.link+'"','tags: [hero, '+moral+', status/alive, year/'+y+']','---','# '+name,'> Born **Year '+y+'** on '+co.link+' · alignment **'+align+' / 10** — '+read+'.','','*(notes)*',''].join('\n');
+    return {title:name,md,summary:'Hero '+name+' born (align '+align+') on '+co.pretty,commit:{kind:'hero',name,alignment:align,coord:co.pretty}};}
+  if(type==='rule'){const text=val('capRule')||'A new law of the world';const body=val('capRuleBody')||'';const y2=current.year;
+    const title=text.replace(/[.?!]+$/,'').slice(0,48);
+    const md=['---','type: rule','established: '+y2,'tags: [world-rule, year/'+y2+']','---','# '+title,'> A law of the world · established **Year '+y2+'**','',text].concat(body?['',body]:[]).concat(['']).join('\n');
+    return {title,md,summary:'World rule: '+text,commit:{kind:'rule',text}};}
+  if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title='Yr'+y+co.nospace+'-'+seq;
+    const md=['---','type: lore','theme: '+theme,'year: '+y,'panel: "'+co.link+'"','tags: [lore, year/'+y+']','---','# '+title+' — '+theme,'> Discovered **Year '+y+'** on '+co.link,'','*(the story the tome tells)*',''].join('\n');
+    return {title,md,summary:'Lore '+title+' ('+theme+')',seqKey:key};}
+  if(type==='event'){const co=capCoord(),t=val('capTitle')||'An Event',outcome=val('capOutcome')||'';const detail=val('capDetail')||'*(what happened)*';const heroes=val('capHeroes').split(',').map(s=>s.trim()).filter(Boolean);const hL=heroes.map(h=>'[['+h+']]');
+    const lines=['---','type: event','year: '+y,'panel: "'+co.link+'"'].concat(heroes.length?['heroes: ['+hL.map(h=>'"'+h+'"').join(', ')+']']:[]).concat(['tags: [event, year/'+y+']','---','# '+t,'> Year '+y+' · '+co.link+(outcome?' · '+outcome:'')]);
+    if(heroes.length) lines.push('> Resolved by: '+hL.join(', '));
+    lines.push('',detail,'');
+    return {title:t,md:lines.join('\n'),summary:'Event “'+t+'” on '+co.pretty+(outcome?' — '+outcome:'')};}
+  if(type==='journal'){const body=val('capBody')||'*(…)*';return {title:'Year '+y,md:['### Year '+y,'',body,''].join('\n'),summary:'Journal entry (Year '+y+')',append:true};}
+  return null;
+}
+function doBuildNote(){
+  const type=val('capType'),note=buildNote(type);if(!note)return;
+  current.pendingCapture=note;
+  document.getElementById('capTitle').innerHTML=note.append?'Append to <b>Chronicle.md</b>':'New note · <b>'+esc(note.title)+'.md</b>';
+  document.getElementById('capText').value=note.md;
+  document.getElementById('capOut').classList.add('show');
+  document.getElementById('capMsg').textContent='';
+}
+
+function completeDraw(){
+  const c=current.card;
+  if(current.lastRoll){const r=current.lastRoll;current.notes.unshift('Roll · '+r.spec+' → '+r.value+(r.read?' — '+r.read:''));}
+  if(current.madeCard){current.notes.unshift('New law forged: “'+current.madeCard+'”');}
+  const cap=current.pendingCapture;
+  if(cap){
+    current.notes.unshift(cap.summary);
+    if(cap.seqKey){S.loreSeq=S.loreSeq||{};S.loreSeq[cap.seqKey]=((S.loreSeq[cap.seqKey])||0)+1;}
+    commitToWorld(cap.commit);
+  }
+  S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes});
+  current=null;
+  persist();renderHeader();renderAtlas();renderLog();
+  resetStage();
+}
+function commitToWorld(co){
+  if(!co)return;
+  if(co.kind==='panel'){ addPanel(co.coord,co.terrain,S.meta.year); S.currentPanel=co.coord; }
+  else if(co.kind==='place'){
+    let pop,tier;if(co.placeKind==='settlement'){tier=POP_TIERS[0][0];pop=POP_TIERS[0][1];}
+    S.places.push({name:co.name,kind:co.placeKind,panel:co.link,founded:current.year,tier,pop,status:'standing'});
+  }
+  else if(co.kind==='grow'){const p=S.places.find(x=>x.name===co.name);if(p){const[tn,tp]=nextTier(p.tier);p.tier=tn;p.pop=tp;}}
+  else if(co.kind==='hero'){ S.heroes.push({name:co.name,alignment:co.alignment,status:'alive',born:current.year,panel:co.coord}); }
+  else if(co.kind==='rule'){ S.rules.push({text:co.text,year:current.year}); }
+}
+
+function resetStage(){
+  const stage=document.getElementById('drawStage');
+  stage.innerHTML=`<button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>
+    <div class="working" style="margin-top:16px">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>`;
+  document.getElementById('deckBtn').onclick=drawCard;
+}
+
+/* ===== FORGE a card ===== */
+let editId=null;
+document.getElementById('tSpace').onchange=e=>{document.getElementById('sectorRange').style.display=e.target.checked?'grid':'none';};
+function editCard(id){const c=S.deck.find(x=>x.id===id);if(!c)return;editId=id;
+  setVal('fTitle',c.title);setVal('fCat',c.category);setVal('fNum',c.number);setVal('fColor',c.color);setVal('fInstr',c.instruction);
+  document.getElementById('tAdvance').checked=c.traits.includes('advance');document.getElementById('tLore').checked=c.traits.includes('lore');document.getElementById('tMeta').checked=c.traits.includes('meta');document.getElementById('tRoll').checked=!!c.roll;setVal('fRoll',c.roll||'');
+  document.getElementById('tSpace').checked=!!c.space;document.getElementById('sectorRange').style.display=c.space?'grid':'none';setVal('fSmin',c.smin||1);setVal('fSmax',c.smax||80);
+  document.getElementById('forgeTitle').textContent='Edit Card';switchView('forge');
+}
+function readForge(){const traits=[];if(document.getElementById('tAdvance').checked)traits.push('advance');if(document.getElementById('tLore').checked)traits.push('lore');if(document.getElementById('tMeta').checked)traits.push('meta');
+  const space=document.getElementById('tSpace').checked;
+  return {title:val('fTitle')||'Untitled',category:val('fCat'),number:parseInt(val('fNum'),10)||0,color:val('fColor'),instruction:val('fInstr'),traits,roll:document.getElementById('tRoll').checked?val('fRoll'):'',space,smin:space?Math.max(1,parseInt(val('fSmin'))||1):1,smax:space?Math.min(80,parseInt(val('fSmax'))||80):80};
+}
+document.getElementById('forgeSave').onclick=()=>{const d=readForge();
+  if(editId){Object.assign(S.deck.find(x=>x.id===editId),d);editId=null;document.getElementById('forgeTitle').textContent='Forge a Card';}
+  else S.deck.push(Object.assign({id:uid(),status:'active',drawn:0},d));
+  resetForge();persist();renderDeck();switchView('deck');};
+document.getElementById('forgeReset').onclick=()=>{editId=null;resetForge();document.getElementById('forgeTitle').textContent='Forge a Card';};
+function resetForge(){['fTitle','fNum','fInstr'].forEach(i=>setVal(i,''));setVal('fCat','foundation');setVal('fColor','black');['tAdvance','tLore','tMeta','tRoll','tSpace'].forEach(i=>document.getElementById(i).checked=false);setVal('fRoll','d10');document.getElementById('sectorRange').style.display='none';setVal('fSmin',1);setVal('fSmax',80);}
+
+/* ===== dice / log / export / tabs ===== */
+document.querySelectorAll('.die').forEach(b=>b.onclick=()=>{const m=+b.dataset.d,v=1+Math.floor(Math.random()*m);document.getElementById('diceOut').textContent=v;document.getElementById('diceCtx').textContent=m===10?(v<=3?'villain':(v>=8?'paragon':'unproven')):'';});
+document.getElementById('clearLog').onclick=()=>{if(confirm('Clear the chronicle log? (Cards, panels, and world age are kept.)')){S.log=[];persist();renderLog();}};
+const today=()=>new Date().toISOString().slice(0,10);
+function dl(name,text,type){const b=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
+document.getElementById('expCards').onclick=()=>dl('sortis-cards-'+today()+'.json',JSON.stringify({exported:today(),deck:S.deck,archive:S.archive},null,2),'application/json');
+document.getElementById('expChron').onclick=()=>{if(!S.log.length){alert('The chronicle is empty.');return;}let md='# '+S.meta.world+' — Chronicle\n\n*Exported '+today()+' · Year '+S.meta.year+' · '+S.meta.draws+' draws*\n\n';let ly=null;S.log.forEach(e=>{if(e.year!==ly){md+='\n## Year '+e.year+'\n\n';ly=e.year;}md+='- **'+e.card+'** *('+e.color+' '+e.number+')*'+(e.advanced?' — *the year turns*':'')+'\n';(e.notes||[]).forEach(n=>md+='  - '+n+'\n');});dl('sortis-chronicle-'+today()+'.md',md,'text/markdown');};
+document.getElementById('expFull').onclick=()=>dl('sortis-backup-'+today()+'.json',JSON.stringify(S,null,2),'application/json');
+document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.deck&&Array.isArray(d.deck)){S.deck=d.deck;if(Array.isArray(d.archive))S.archive=d.archive;persist();renderDeck();renderArchive();switchView('deck');}else{alert('No cards found in that file. Import expects a "Export cards" file.');}}catch(err){alert('Could not read that file.');}e.target.value='';};r.readAsText(f);};
+
+document.getElementById('syncCards').onclick=syncStarterCards;
+document.getElementById('resetWorld').onclick=resetWorld;
+document.getElementById('addRule').onclick=()=>{const inp=document.getElementById('newRule');const t=inp.value.trim();if(!t)return;S.rules.push({text:t,year:S.meta.year});inp.value='';persist();renderWorldRules();};
+document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.getElementById('addRule').click();};
+document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
+document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
+function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
+
+resetStage();
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Claude Code local settings (machine-specific)
+.claude/
+
+# Node / tooling (not required to run, but tidy)
+node_modules/
+npm-debug.log*
+
+# Vercel
+.vercel
+
+# Local env (do not commit real secrets)
+.env
+.env.local
+
+# Local world backups you might export into the repo folder
+*-backup-*.json
