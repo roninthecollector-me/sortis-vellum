@@ -546,10 +546,14 @@
       <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px">Send captured notes straight into Obsidian, and write your whole world as a structured vault — panels, heroes, places, rules, a <b>World.md</b> Dataview dashboard, and your panel art.</div>
       <div class="field" style="margin-bottom:12px"><label>Vault name (for the “Send to Obsidian” button)</label><input type="text" id="obsVault" placeholder="the exact name of your Obsidian vault"></div>
       <div class="checks" style="margin-bottom:12px"><label><input type="checkbox" id="obsImages" checked> Include panel images in the vault export</label></div>
-      <div class="cloud-note" id="obsStatus" style="margin-bottom:12px"></div>
+      <div id="obsStatus" style="font-size:13px;line-height:1.5;margin-bottom:12px;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--ink)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button class="btn ghost" id="obsConnect">Connect vault folder</button>
         <button class="btn" id="obsWrite">Write / refresh vault</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
+        <span id="obsLastWrite" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim)"></span>
+        <button class="mini danger" id="obsDisconnect" style="display:none">Disconnect folder</button>
       </div>
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:10px">Folder connect needs Chrome, Edge, or Brave on desktop. Elsewhere, “Write / refresh” downloads a .zip to unzip into your vault.</div>
     </div>
@@ -1583,10 +1587,20 @@ function idbDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('sortis
 async function idbSet(k,v){ const db=await idbDB(); return new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
 async function idbGet(k){ const db=await idbDB(); return new Promise((res,rej)=>{ const t=db.transaction('h','readonly'); const q=t.objectStore('h').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
 async function loadVaultHandle(){ try{ vaultDir=(await idbGet('vaultDir'))||null; }catch(e){} renderObsidian(); }
+async function idbDel(k){ const db=await idbDB(); return new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').delete(k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
 async function connectVault(){
   if(!window.showDirectoryPicker){ alert('This browser can’t connect a folder directly (Firefox/Safari/mobile). Use “Write / refresh vault” to download a .zip instead.'); return; }
-  try{ const dir=await window.showDirectoryPicker({mode:'readwrite'}); vaultDir=dir; try{ await idbSet('vaultDir',dir); }catch(e){} renderObsidian(); flag('vault folder connected'); }
-  catch(e){ /* user cancelled the picker */ }
+  try{
+    const dir=await window.showDirectoryPicker({mode:'readwrite'});
+    vaultDir=dir; S.settings.obsidianFolder=dir.name; persist();
+    try{ await idbSet('vaultDir',dir); }catch(e){}
+    await renderObsidian(); flag('connected: '+dir.name);
+  }catch(e){ /* user cancelled the picker */ }
+}
+async function disconnectVault(){
+  vaultDir=null; try{ await idbDel('vaultDir'); }catch(e){}
+  delete S.settings.obsidianFolder; persist();
+  await renderObsidian(); flag('vault folder disconnected');
 }
 async function ensureRW(dir){ if(!dir.requestPermission) return true; if((await dir.queryPermission({mode:'readwrite'}))==='granted') return true; return (await dir.requestPermission({mode:'readwrite'}))==='granted'; }
 async function writeFileTo(dir,path,content){
@@ -1601,7 +1615,8 @@ async function exportVault(){
     try{
       for(const f of buildVaultTextFiles()) await writeFileTo(vaultDir,f.path,f.md);
       for(const im of await fetchVaultImages()) await writeFileTo(vaultDir,im.path,im.data);
-      flag('vault written ✓'); alert('Vault written/refreshed in the connected folder.');
+      S.settings.vaultLastWrite=new Date().toLocaleString(); persist(); await renderObsidian();
+      flag('vault written ✓'); alert('Vault written/refreshed in “'+(vaultDir.name||'your folder')+'”.');
     }catch(e){ console.warn(e); flag('vault write failed'); alert('Write failed: '+(e.message||e)); }
   } else { await exportVaultZip(); }
 }
@@ -1610,7 +1625,8 @@ async function exportVaultZip(){
   try{
     const files=buildVaultTextFiles().map(f=>({path:f.path,data:new TextEncoder().encode(f.md)}));
     (await fetchVaultImages()).forEach(im=>files.push(im));
-    dlBlob('sortis-vault-'+today()+'.zip', zipStore(files)); flag('vault .zip downloaded');
+    dlBlob('sortis-vault-'+today()+'.zip', zipStore(files));
+    S.settings.vaultLastWrite=new Date().toLocaleString()+' (.zip)'; persist(); renderObsidian(); flag('vault .zip downloaded');
   }catch(e){ console.warn(e); alert('Could not build the vault zip: '+(e.message||e)); }
 }
 function dlBlob(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
@@ -1641,14 +1657,32 @@ function initObsidianUI(){
   const im=document.getElementById('obsImages'); if(im) im.onchange=()=>{ S.settings.vaultImages=im.checked; persist(); };
   const c=document.getElementById('obsConnect'); if(c) c.onclick=connectVault;
   const w=document.getElementById('obsWrite'); if(w) w.onclick=exportVault;
+  const d=document.getElementById('obsDisconnect'); if(d) d.onclick=disconnectVault;
   loadVaultHandle();
 }
-function renderObsidian(){
+async function renderObsidian(){
   const v=document.getElementById('obsVault'); if(v && document.activeElement!==v) v.value=S.settings.obsidianVault||'';
   const im=document.getElementById('obsImages'); if(im) im.checked=S.settings.vaultImages!==false;
-  const s=document.getElementById('obsStatus'); if(s) s.innerHTML = vaultDir
-    ? 'Connected folder: <b>'+esc(vaultDir.name||'vault')+'</b> — “Write / refresh” saves straight in.'
-    : (window.showDirectoryPicker ? 'No folder connected. Connect one for direct writes, or “Write / refresh” to download a .zip.' : '“Write / refresh” will download a .zip (folder connect isn’t supported in this browser).');
+  const s=document.getElementById('obsStatus'), dis=document.getElementById('obsDisconnect'), lw=document.getElementById('obsLastWrite'), connect=document.getElementById('obsConnect');
+  if(lw) lw.textContent = S.settings.vaultLastWrite ? ('Last written: '+S.settings.vaultLastWrite) : '';
+  if(!s) return;
+  if(!window.showDirectoryPicker){
+    s.style.color='var(--ash)'; s.innerHTML='⛶ Direct folder writes aren’t supported in this browser — “Write / refresh vault” downloads a <b>.zip</b> to unzip into your vault.';
+    if(connect) connect.style.display='none'; if(dis) dis.style.display='none'; return;
+  }
+  if(connect) connect.style.display='';
+  if(vaultDir){
+    const name=esc(vaultDir.name||S.settings.obsidianFolder||'vault');
+    let perm='prompt'; try{ perm=await vaultDir.queryPermission({mode:'readwrite'}); }catch(e){}
+    if(perm==='granted'){ s.style.color='var(--verd)'; s.innerHTML='✓ <b>Connected:</b> '+name+' — “Write / refresh vault” saves straight in.'; }
+    else { s.style.color='var(--gold)'; s.innerHTML='◴ <b>Folder remembered:</b> '+name+' — you’ll be asked to allow access the first time you write this session.'; }
+    if(connect) connect.textContent='Reconnect a different folder';
+    if(dis) dis.style.display='';
+  } else {
+    s.style.color='var(--ash)'; s.innerHTML='○ <b>No folder connected.</b> Connect one for direct writes, or use “Write / refresh vault” to download a .zip.';
+    if(connect) connect.textContent='Connect vault folder';
+    if(dis) dis.style.display='none';
+  }
 }
 
 /* ===== dice / log / export / tabs ===== */
