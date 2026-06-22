@@ -1412,10 +1412,24 @@ function doBuildNote(){
   document.getElementById('capMsg').textContent='';
 }
 
+// If the explorer filled capture fields but didn't click "Build note", capture it anyway on complete.
+// Returns null for empty captures so we never commit blank entries.
+function autoCapture(){
+  const ct=val('capType'); if(!ct||ct==='none') return null;
+  const has=id=>((val(id)||'').trim().length>0);
+  if(ct==='place'  && !has('capName'))  return null;
+  if(ct==='hero'   && !has('capName'))  return null;
+  if(ct==='rule'   && !has('capRule'))  return null;
+  if(ct==='event'  && !has('capTitle')) return null;
+  if(ct==='journal'&& !has('capBody'))  return null;
+  if(ct==='grow'   && !(val('capGrow')||'').trim()) return null;
+  return buildNote(ct);
+}
 function completeDraw(){
   const c=current.card;
   if(current.lastRoll){const r=current.lastRoll;current.notes.unshift('Roll · '+r.spec+' → '+r.value+(r.read?' — '+r.read:''));}
   if(current.madeCard){current.notes.unshift('New law forged: “'+current.madeCard+'”');}
+  if(!current.pendingCapture && !c.make){ const auto=autoCapture(); if(auto) current.pendingCapture=auto; }
   const cap=current.pendingCapture;
   if(cap){
     current.notes.unshift(cap.summary);
