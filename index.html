@@ -540,6 +540,19 @@
         <button class="btn ghost" id="resetWorld">Start a fresh world</button>
       </div>
     </div>
+
+    <h3 class="sec">Obsidian vault</h3>
+    <div class="form" style="max-width:560px">
+      <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px">Send captured notes straight into Obsidian, and write your whole world as a structured vault — panels, heroes, places, rules, a <b>World.md</b> Dataview dashboard, and your panel art.</div>
+      <div class="field" style="margin-bottom:12px"><label>Vault name (for the “Send to Obsidian” button)</label><input type="text" id="obsVault" placeholder="the exact name of your Obsidian vault"></div>
+      <div class="checks" style="margin-bottom:12px"><label><input type="checkbox" id="obsImages" checked> Include panel images in the vault export</label></div>
+      <div class="cloud-note" id="obsStatus" style="margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn ghost" id="obsConnect">Connect vault folder</button>
+        <button class="btn" id="obsWrite">Write / refresh vault</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:10px">Folder connect needs Chrome, Edge, or Brave on desktop. Elsewhere, “Write / refresh” downloads a .zip to unzip into your vault.</div>
+    </div>
   </section>
 </div>
 <canvas id="panelCv" width="2400" height="3000"></canvas>
@@ -784,7 +797,7 @@ function normCoord(nm,nd,em,ed){ if(nm===0)nd='N'; if(em===0)ed='E'; const prett
 function capCoord(){ return normCoord(Math.max(0,parseInt(val('capNsMag'))||0),val('capNsDir')||'N',Math.max(0,parseInt(val('capEwMag'))||0),val('capEwDir')||'E'); }
 
 /* ===== render shell ===== */
-function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderWorldRules();}
+function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderWorldRules();renderObsidian();}
 function renderWorldRules(){
   const list=document.getElementById('ruleList'); if(!list) return;
   document.getElementById('ruleCount').textContent = S.rules.length? (S.rules.length+(S.rules.length===1?' rule':' rules')) : 'empty';
@@ -1210,7 +1223,7 @@ function showCard(c){
       <div class="cap-out" id="capOut">
         <div class="cap-title" id="capTitle"></div>
         <textarea id="capText" readonly></textarea>
-        <div class="cap-tools"><button id="capCopy">Copy</button><button id="capDl">Download .md</button></div>
+        <div class="cap-tools"><button id="capObs">Send to Obsidian</button><button id="capCopy">Copy</button><button id="capDl">Download .md</button></div>
         <div class="cap-msg" id="capMsg"></div>
       </div>`;
 
@@ -1255,6 +1268,7 @@ function showCard(c){
     document.getElementById('capType').onchange=e=>{renderCaptureFields(e.target.value);document.getElementById('capOut').classList.remove('show');document.getElementById('capBuild').textContent = e.target.value==='event'?'Generate Vault Entry':'Build note';};
     document.getElementById('capBuild').textContent = defType==='event'?'Generate Vault Entry':'Build note';
     document.getElementById('capBuild').onclick=doBuildNote;
+    document.getElementById('capObs').onclick=sendNoteToObsidian;
     document.getElementById('capCopy').onclick=()=>{const tx=document.getElementById('capText');tx.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(tx.value).catch(()=>{});ok=true;}document.getElementById('capMsg').textContent=ok?'Copied — paste into your vault.':'Select the text and copy.';};
     document.getElementById('capDl').onclick=()=>{const name=((current.pendingCapture&&current.pendingCapture.title)||'note').replace(/[\\/:*?"<>|]/g,'');const blob=new Blob([document.getElementById('capText').value],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'.md';a.click();};
   }
@@ -1457,6 +1471,180 @@ document.getElementById('forgeSave').onclick=()=>{const d=readForge();
 document.getElementById('forgeReset').onclick=()=>{editId=null;resetForge();document.getElementById('forgeTitle').textContent='Forge a Card';};
 function resetForge(){['fTitle','fNum','fInstr'].forEach(i=>setVal(i,''));setVal('fCat','foundation');setVal('fColor','black');setVal('fTier','uncommon');['tAdvance','tLore','tMeta','tRoll','tSpace'].forEach(i=>document.getElementById(i).checked=false);setVal('fRoll','d10');document.getElementById('sectorRange').style.display='none';setVal('fSmin',1);setVal('fSmax',80);}
 
+/* ===== Obsidian vault — per-note send + full vault write/zip ===== */
+function safeName(s){ return ((s||'untitled')+'').replace(/[\\/:*?"<>|#^\[\]]/g,'').trim()||'untitled'; }
+function cap1(s){ s=(s||'')+''; return s.charAt(0).toUpperCase()+s.slice(1); }
+function bareCoord(s){ return ((s||'')+'').replace(/[\[\]]/g,'').trim(); }
+function sameCoord(a,b){ return bareCoord(a)===bareCoord(b); }
+function attName(coord,gen){ return 'attachments/'+coordNoSpace(coord)+'-gen'+gen+'.webp'; }
+
+// --- note generators (from world state; mirror the per-capture note shapes) ---
+function vaultPanelNote(p){
+  const heroes=S.heroes.filter(h=>sameCoord(h.panel,p.coord));
+  const places=S.places.filter(pl=>sameCoord(pl.panel,p.coord));
+  const gens=Object.keys(p.images||{}).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  const L=['---','type: panel','coord: '+p.coord,'terrain: '+(p.terrain||''),'founded: '+p.founded,'generation: '+(p.gen||1),'tags: [panel, year/'+p.founded+']','---','# '+p.coord,'> '+cap1(p.terrain)+' · founded **Year '+p.founded+'** · generation **'+(p.gen||1)+'**',''];
+  if(gens.length){ L.push('## Art'); gens.forEach(g=>L.push('![['+attName(p.coord,g)+']]','*gen '+g+'*','')); }
+  L.push('## Heroes'); (heroes.length?heroes.map(h=>'- [['+h.name+']]'):['*(none yet)*']).forEach(x=>L.push(x)); L.push('');
+  L.push('## Places'); (places.length?places.map(pl=>'- [['+pl.name+']]'):['*(none yet)*']).forEach(x=>L.push(x)); L.push('');
+  L.push('## Lore','*(lore notes you send here will link back automatically)*','');
+  return {path:'Panels/'+safeName(p.coord)+'.md', md:L.join('\n')};
+}
+function vaultHeroNote(h){
+  const moral=h.alignment<=3?'villain':(h.alignment>=8?'hero':'unproven');
+  const read=h.alignment<=3?'a villain':(h.alignment>=8?'a paragon':'conflicted, unproven');
+  const L=['---','type: hero','alignment: '+h.alignment,'status: '+h.status,'born: '+h.born,'panel: "[['+bareCoord(h.panel)+']]"','tags: [hero, '+moral+', status/'+h.status+', year/'+h.born+']','---','# '+h.name,'> Born **Year '+h.born+'** on [['+bareCoord(h.panel)+']] · alignment **'+h.alignment+' / 10** — '+read+(h.status==='fallen'?' · **fallen**':'')+'.','','*(notes)*',''];
+  return {path:'Heroes/'+safeName(h.name)+'.md', md:L.join('\n')};
+}
+function vaultPlaceNote(pl){
+  const popLines=pl.tier?['population: '+pl.pop,'tier: '+pl.tier]:[];
+  const line=pl.tier?(' · pop. **'+pl.pop+'** ('+pl.tier+')'):'';
+  const L=['---','type: place','kind: '+pl.kind,'panel: "[['+bareCoord(pl.panel)+']]"','founded: '+pl.founded].concat(popLines).concat(['tags: [place/'+pl.kind+', year/'+pl.founded+']','---','# '+pl.name,'> '+cap1(pl.kind)+' on [['+bareCoord(pl.panel)+']] · founded **Year '+pl.founded+'**'+line,'','*(notes)*','']);
+  return {path:'Places/'+safeName(pl.name)+'.md', md:L.join('\n')};
+}
+function vaultRuleNotes(){
+  return S.rules.map((r,i)=>{
+    const title=((r.text||'Rule').replace(/[.?!]+$/,'').slice(0,48))||('Rule '+(i+1));
+    const L=['---','type: rule','established: '+r.year,'tags: [world-rule, year/'+r.year+']','---','# '+title,'> A law of the world · established **Year '+r.year+'**','',r.text||'',''];
+    return {path:'World Rules/'+safeName(title)+'.md', md:L.join('\n')};
+  });
+}
+function vaultChronicle(){
+  let md='# '+S.meta.world+' — Chronicle\n\n*Year '+S.meta.year+' · '+S.meta.draws+' draws*\n\n';
+  let ly=null; S.log.forEach(e=>{ if(e.year!==ly){ md+='\n## Year '+e.year+'\n\n'; ly=e.year; } md+='- **'+e.card+'**'+(e.color?' *('+e.color+' '+e.number+')*':'')+(e.advanced?' — *the year turns*':'')+'\n'; (e.notes||[]).forEach(n=>md+='  - '+n+'\n'); });
+  return {path:'Chronicle.md', md};
+}
+function vaultWorldMOC(){
+  const dv=s=>'```dataview\n'+s+'\n```';
+  const list=(arr,f)=>arr.length?arr.map(f):['- *(none yet)*'];
+  const L=['---','type: world','world: "'+S.meta.world+'"','year: '+S.meta.year,'draws: '+S.meta.draws,'tags: [moc]','---',
+    '# '+S.meta.world,
+    '> Year **'+S.meta.year+'** · '+S.panels.length+' panels · '+S.heroes.length+' heroes · '+S.places.length+' places · '+S.rules.length+' rules · '+S.meta.draws+' draws','',
+    '> [!info] This dashboard uses the **Dataview** plugin. Without it, scroll to the plain index below.','',
+    '## Panels', dv('TABLE terrain, founded, generation FROM "Panels" SORT founded ASC'),
+    '## Heroes', dv('TABLE alignment, status, born, panel FROM "Heroes" SORT alignment DESC'),
+    '## Places', dv('TABLE kind, tier, population, panel FROM "Places" SORT founded ASC'),
+    '## Lore by year', dv('TABLE theme, panel FROM "Lore" SORT year ASC'),
+    '## World rules', dv('LIST FROM "World Rules" SORT established ASC'),'',
+    '---','## Index (no plugin needed)',
+    '### Panels'].concat(list(S.panels,p=>'- [['+p.coord+']]'))
+    .concat(['','### Heroes']).concat(list(S.heroes,h=>'- [['+h.name+']]'))
+    .concat(['','### Places']).concat(list(S.places,pl=>'- [['+pl.name+']]'));
+  return {path:'World.md', md:L.join('\n')};
+}
+function buildVaultTextFiles(){
+  const f=[];
+  S.panels.forEach(p=>f.push(vaultPanelNote(p)));
+  S.heroes.forEach(h=>f.push(vaultHeroNote(h)));
+  S.places.forEach(pl=>f.push(vaultPlaceNote(pl)));
+  vaultRuleNotes().forEach(n=>f.push(n));
+  f.push(vaultChronicle()); f.push(vaultWorldMOC());
+  return f;
+}
+async function fetchVaultImages(){
+  const out=[]; if(S.settings.vaultImages===false || !imagesEnabled()) return out;
+  for(const p of S.panels){
+    for(const g of Object.keys(p.images||{})){
+      const rec=p.images[g]; if(!rec||!rec.path) continue;
+      const url=await signedUrl(rec.path); if(!url) continue;
+      try{ const r=await fetch(url); if(!r.ok) continue; out.push({path:attName(p.coord,g), data:new Uint8Array(await r.arrayBuffer())}); }catch(e){ console.warn('vault image fetch failed',e); }
+    }
+  }
+  return out;
+}
+
+// --- per-note "Send to Obsidian" via obsidian:// URI ---
+function obsFolderFor(type){ return ({panel:'Panels',place:'Places',hero:'Heroes',lore:'Lore',rule:'World Rules',event:'Events'})[type]||''; }
+function obsidianURL(vault,note,type,content){
+  if(note.append) return 'obsidian://new?vault='+encodeURIComponent(vault)+'&file='+encodeURIComponent('Chronicle')+'&append=true&content='+encodeURIComponent(content+'\n');
+  const folder=obsFolderFor(type), file=(folder?folder+'/':'')+note.title;
+  return 'obsidian://new?vault='+encodeURIComponent(vault)+'&file='+encodeURIComponent(file)+'&content='+encodeURIComponent(content);
+}
+function sendNoteToObsidian(){
+  const vault=(S.settings.obsidianVault||'').trim();
+  const msg=document.getElementById('capMsg');
+  if(!vault){ if(msg)msg.textContent='Set your vault name in Settings → Obsidian first.'; switchView('settings'); return; }
+  const note=current&&current.pendingCapture; const content=(document.getElementById('capText')||{}).value||'';
+  if(!note||!content){ if(msg)msg.textContent='Build the note first.'; return; }
+  const url=obsidianURL(vault,note,val('capType'),content);
+  if(url.length>1800){ if(msg)msg.textContent='Note too long for the Obsidian link — use Copy or Download instead.'; return; }
+  window.location.href=url; if(msg)msg.textContent='Sent to Obsidian.';
+}
+
+// --- full vault: write to a connected folder, or download a .zip ---
+let vaultDir=null;
+function idbDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('sortis-fs',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbSet(k,v){ const db=await idbDB(); return new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function idbGet(k){ const db=await idbDB(); return new Promise((res,rej)=>{ const t=db.transaction('h','readonly'); const q=t.objectStore('h').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function loadVaultHandle(){ try{ vaultDir=(await idbGet('vaultDir'))||null; }catch(e){} renderObsidian(); }
+async function connectVault(){
+  if(!window.showDirectoryPicker){ alert('This browser can’t connect a folder directly (Firefox/Safari/mobile). Use “Write / refresh vault” to download a .zip instead.'); return; }
+  try{ const dir=await window.showDirectoryPicker({mode:'readwrite'}); vaultDir=dir; try{ await idbSet('vaultDir',dir); }catch(e){} renderObsidian(); flag('vault folder connected'); }
+  catch(e){ /* user cancelled the picker */ }
+}
+async function ensureRW(dir){ if(!dir.requestPermission) return true; if((await dir.queryPermission({mode:'readwrite'}))==='granted') return true; return (await dir.requestPermission({mode:'readwrite'}))==='granted'; }
+async function writeFileTo(dir,path,content){
+  const parts=path.split('/'); const name=parts.pop(); let d=dir;
+  for(const part of parts) d=await d.getDirectoryHandle(part,{create:true});
+  const fh=await d.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(content); await w.close();
+}
+async function exportVault(){
+  if(vaultDir){
+    if(!(await ensureRW(vaultDir))){ alert('Permission to write that folder was denied.'); return; }
+    flag('writing vault…');
+    try{
+      for(const f of buildVaultTextFiles()) await writeFileTo(vaultDir,f.path,f.md);
+      for(const im of await fetchVaultImages()) await writeFileTo(vaultDir,im.path,im.data);
+      flag('vault written ✓'); alert('Vault written/refreshed in the connected folder.');
+    }catch(e){ console.warn(e); flag('vault write failed'); alert('Write failed: '+(e.message||e)); }
+  } else { await exportVaultZip(); }
+}
+async function exportVaultZip(){
+  flag('building vault zip…');
+  try{
+    const files=buildVaultTextFiles().map(f=>({path:f.path,data:new TextEncoder().encode(f.md)}));
+    (await fetchVaultImages()).forEach(im=>files.push(im));
+    dlBlob('sortis-vault-'+today()+'.zip', zipStore(files)); flag('vault .zip downloaded');
+  }catch(e){ console.warn(e); alert('Could not build the vault zip: '+(e.message||e)); }
+}
+function dlBlob(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
+
+// --- minimal store-mode ZIP (no dependency) ---
+const CRC_TABLE=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(u8){ let c=0xFFFFFFFF; for(let i=0;i<u8.length;i++) c=CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function zipStore(files){
+  const enc=new TextEncoder(); const chunks=[], central=[]; let offset=0;
+  const u16=v=>[v&0xFF,(v>>8)&0xFF], u32=v=>[v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF];
+  for(const f of files){
+    const name=enc.encode(f.path), data=f.data, crc=crc32(data);
+    const lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0));
+    const local=new Uint8Array(lh.length+name.length); local.set(lh,0); local.set(name,lh.length);
+    chunks.push(local,data);
+    const ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+    const cen=new Uint8Array(ch.length+name.length); cen.set(ch,0); cen.set(name,ch.length);
+    central.push(cen); offset+=local.length+data.length;
+  }
+  let cdSize=0; central.forEach(c=>cdSize+=c.length);
+  const end=[].concat(u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(cdSize),u32(offset),u16(0));
+  return new Blob([...chunks,...central,new Uint8Array(end)],{type:'application/zip'});
+}
+
+// --- Obsidian settings UI ---
+function initObsidianUI(){
+  const v=document.getElementById('obsVault'); if(v) v.oninput=()=>{ S.settings.obsidianVault=v.value.trim(); persist(); };
+  const im=document.getElementById('obsImages'); if(im) im.onchange=()=>{ S.settings.vaultImages=im.checked; persist(); };
+  const c=document.getElementById('obsConnect'); if(c) c.onclick=connectVault;
+  const w=document.getElementById('obsWrite'); if(w) w.onclick=exportVault;
+  loadVaultHandle();
+}
+function renderObsidian(){
+  const v=document.getElementById('obsVault'); if(v && document.activeElement!==v) v.value=S.settings.obsidianVault||'';
+  const im=document.getElementById('obsImages'); if(im) im.checked=S.settings.vaultImages!==false;
+  const s=document.getElementById('obsStatus'); if(s) s.innerHTML = vaultDir
+    ? 'Connected folder: <b>'+esc(vaultDir.name||'vault')+'</b> — “Write / refresh” saves straight in.'
+    : (window.showDirectoryPicker ? 'No folder connected. Connect one for direct writes, or “Write / refresh” to download a .zip.' : '“Write / refresh” will download a .zip (folder connect isn’t supported in this browser).');
+}
+
 /* ===== dice / log / export / tabs ===== */
 document.querySelectorAll('.die').forEach(b=>b.onclick=()=>{const m=+b.dataset.d,v=1+Math.floor(Math.random()*m);document.getElementById('diceOut').textContent=v;document.getElementById('diceCtx').textContent=m===10?(v<=3?'villain':(v>=8?'paragon':'unproven')):'';});
 document.getElementById('clearLog').onclick=()=>{if(confirm('Clear the chronicle log? (Cards, panels, and world age are kept.)')){S.log=[];persist();renderLog();}};
@@ -1479,6 +1667,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.
 
 resetStage();
 initMapUI();
+initObsidianUI();
 boot();
 </script>
 </body>

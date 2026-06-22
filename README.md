@@ -13,7 +13,7 @@ A single self-contained web app (no build step, no framework). Everything — th
 - **Panel forge** — generates print/Procreate-ready 8×10 @300DPI panel templates with a 1-inch grid, N/S/E/W orientation, compass rose, and a coordinate stamped into the title block and filename.
 - **The Atlas** — a registry of every panel, settlement (with population tiers Camp → Holdfast → Reach → Bastion), and hero (with d10 alignment, alive/fallen).
 - **World Rules** — a tome of the world's laws (magic exists, the year is 242 days, etc.).
-- **Vault capture** — almost every draw emits a ready-to-paste Markdown note with `[[wikilinks]]` and `#tags` for Obsidian.
+- **Vault capture** — almost every draw emits a ready-to-paste Markdown note with `[[wikilinks]]` and `#tags` for Obsidian. **Send to Obsidian** drops the note straight into your vault (via the `obsidian://` URI), and Settings → **Obsidian vault** writes your whole world as a structured vault (panels/heroes/places/rules + a `World.md` Dataview dashboard + embedded panel art) — directly into a connected folder, or as a downloadable `.zip`.
 
 ## Run it
 

@@ -59,6 +59,7 @@ S = {
 - **Lore entries** auto-name `Yr{year}{coordNoSpace}-{n}`, where `n` is a single running counter per year across all panels (see `S.loreSeq`).
 - **Population tiers**: Camp 400 → Holdfast 800 → Reach 1200 → Bastion 2400.
 - **Capture → vault**: `buildNote(type)` returns `{ title, md, summary, commit? }`. `commitToWorld(commit)` writes the same record into `S` (panel/place/hero/rule). Note shapes are frontmatter + `# title` + `> summary line` + body.
+- **Obsidian workflow** (vault owns prose, app owns structure): per-note **Send to Obsidian** uses `obsidian://new` (`obsidianURL()`, routed by type to `Panels/`, `Heroes/`, etc.; journal appends to `Chronicle.md`); needs `S.settings.obsidianVault`. **Full vault export** (`buildVaultTextFiles()` + `fetchVaultImages()`) regenerates the structured skeleton from `S` with computed backlinks, embeds panel art, and writes a `World.md` **Dataview dashboard** — straight into a connected folder (File System Access API; handle persisted in IndexedDB) or a hand-rolled store-mode `.zip` (`zipStore()`, no dependency). Lore/event/journal prose is **not** stored in `S` — it lives only in the vault once sent. Keep generated frontmatter Dataview-friendly and consistent with the per-capture note shapes.
 - **Eligibility**: heroes/events/terrain/art/etc. require ≥1 panel to exist (`eligible(card)`); only foundation/meta surface in an empty world.
 
 ### Storage tiers (in `Store` + cloud module)
