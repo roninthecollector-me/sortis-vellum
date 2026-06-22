@@ -631,61 +631,61 @@ function seedDeck(){
   const _deck=[
     c("Forgotten Ground","foundation",2,"black","Found a new panel from the ruins of a forgotten past."),
     c("Scarred Earth","foundation",2,"red","Found a new panel of blasted, barren, irradiated land."),
-    c("The Drowned","foundation",3,"red","Found a new panel claimed by water — flooded city, swollen river, new coast."),
+    c("The Drowned","foundation",3,"red","Found a new panel claimed by water: flooded city, swollen river, new coast."),
     c("Reclaimed","foundation",2,"black","Found a new panel where nature has buried the old world."),
 
-    c("Body of Water","terrain",2,"red","Water claims part of this panel — lake, river, or flood. Cover the rolled sectors.",{space:true,smin:5,smax:80}),
+    c("Body of Water","terrain",2,"red","Water claims part of this panel: lake, river, or flood. Cover the rolled sectors.",{space:true,smin:5,smax:80}),
     c("Spreading Wood","terrain",1,"black","Forest takes root and spreads across the panel. Cover the rolled sectors.",{space:true,smin:3,smax:60}),
-    c("Tilled Land","terrain",1,"black","Someone works the earth — fields and farmland. Cover the rolled sectors.",{space:true,smin:2,smax:40}),
-    c("Risen Stone","terrain",2,"black","The land lifts — hills, highlands, broken peaks. Cover the rolled sectors.",{space:true,smin:3,smax:50}),
-    c("The Wastes","terrain",3,"red","Dead ground spreads — ash, salt, ruin. Cover the rolled sectors.",{space:true,smin:4,smax:70}),
+    c("Tilled Land","terrain",1,"black","Someone works the earth: fields and farmland. Cover the rolled sectors.",{space:true,smin:2,smax:40}),
+    c("Risen Stone","terrain",2,"black","The land lifts: hills, highlands, broken peaks. Cover the rolled sectors.",{space:true,smin:3,smax:50}),
+    c("The Wastes","terrain",3,"red","Dead ground spreads: ash, salt, ruin. Cover the rolled sectors.",{space:true,smin:4,smax:70}),
     c("Old Roads","terrain",1,"black","Trace the ruined infrastructure of the old world across the panel. Cover the rolled sectors.",{space:true,smin:1,smax:20}),
 
     c("Resettlement","develop",2,"black","A people take root here. Found a Camp. The world ages one year.",{traits:['advance'],space:true,smin:1,smax:12}),
     c("It Grows","develop",2,"black","A settlement swells. Grow it one tier (do this from the Atlas). The world ages one year.",{traits:['advance']}),
     c("The Long Road","develop",3,"black","Connect this panel to another by road, rail, or route. The world ages one year.",{traits:['advance']}),
-    c("Monument","develop",1,"red","Raise a statue or monument — to whom, or to what? Cover the rolled sectors. Record it in the Lore. The world ages one year.",{traits:['advance','lore'],space:true,smin:1,smax:10}),
+    c("Monument","develop",1,"red","Raise a statue or monument. To whom, or to what? Cover the rolled sectors. Record it in the Lore. The world ages one year.",{traits:['advance','lore'],space:true,smin:1,smax:10}),
     c("Hard Year","develop",2,"red","Hardship sweeps the region. The world ages one year and the living suffer.",{traits:['advance']}),
 
-    c("Personal Photograph","art",1,"black","Add a personal photo to this panel — yours, your family, a place you've stood."),
+    c("Personal Photograph","art",1,"black","Add a personal photo to this panel: yours, your family, a place you've stood."),
     c("Words from a Letter","art",1,"black","Collage in text pulled from an email, a letter, or a message."),
     c("Torn from the Page","art",1,"red","Work in text or images from an article, a magazine, or a book."),
-    c("Another's Hand","art",1,"red","Collage in a screenshot of another artist's work — credit them in your notes."),
+    c("Another's Hand","art",1,"red","Collage in a screenshot of another artist's work. Credit them in your notes."),
     c("Invert","art",1,"black","Invert the colours of part of this panel."),
     c("Drain the Colour","art",1,"black","Render part of this panel in black and white."),
-    c("From the Archive","art",2,"red","Pull archived or found content onto the panel — old maps, documents, photographs."),
-    c("Render a Subject","art",1,"black","Depict a subject on this panel — stars, shapes, cars, animals, technology, man, woman, abstract, or nostalgia. Roll the dice or choose."),
-    c("Pure Form","art",1,"black","Add abstract form — geometry, colour, pattern — with nothing it represents."),
-    c("Nostalgia","art",1,"red","Add something that aches for the world-that-was — an object, a memory, a longing."),
+    c("From the Archive","art",2,"red","Pull archived or found content onto the panel: old maps, documents, photographs."),
+    c("Render a Subject","art",1,"black","Depict a subject on this panel: stars, shapes, cars, animals, technology, man, woman, abstract, or nostalgia. Roll the dice or choose."),
+    c("Pure Form","art",1,"black","Add abstract form (geometry, colour, pattern) with nothing it represents."),
+    c("Nostalgia","art",1,"red","Add something that aches for the world-that-was: an object, a memory, a longing."),
     c("Sacrifice","art",1,"red","Use a piece of your children's art on your panel today. Cover the rolled sectors.",{space:true,smin:20,smax:80}),
 
-    c("Ancient Tome","discovery",1,"red","A tome surfaces telling a story of — roll: Creation · Destruction · Faith · History · Prophecy · Betrayal. Write a Lore entry.",{traits:['lore'],roll:'d6'}),
+    c("Ancient Tome","discovery",1,"red","A tome surfaces telling a story. Roll: Creation · Destruction · Faith · History · Prophecy · Betrayal. Write a Lore entry.",{traits:['lore'],roll:'d6'}),
     c("Relic of the Old World","discovery",1,"black","An artifact of the world-that-was is unearthed. What is it, and what does it mean now? Write a Lore entry.",{traits:['lore']}),
     c("Ruins Revealed","discovery",1,"black","Decide what a ruin on this panel once truly was. Annotate it."),
 
-    c("A Child Is Born","hero",1,"black","A hero is born on this panel. Roll a d10 for their nature — 1 villain, 10 paragon. Name them; record it.",{roll:'d10'}),
+    c("A Child Is Born","hero",1,"black","A hero is born on this panel. Roll a d10 for their nature: 1 villain, 10 paragon. Name them; record it.",{roll:'d10'}),
     c("The Calling","hero",1,"red","A living, dormant hero answers a calling and steps onto the world stage. If none live nearby, it goes unanswered."),
     c("Deeds Echo","hero",2,"black","An activated hero performs a deed that will be remembered. Write it into the Lore.",{traits:['lore']}),
     c("A Hero Falls","hero",1,"red","Death comes for a hero on this panel. Mark one fallen (do this from the Atlas)."),
 
-    c("The Reckoning","event",2,"red","An event strikes this panel. Resolve it with the living heroes here — if none stand, it ends in ruin.",{roll:'d10'}),
+    c("The Reckoning","event",2,"red","An event strikes this panel. Resolve it with the living heroes here. If none stand, it ends in ruin.",{roll:'d10'}),
     c("Schism","event",2,"red","A settlement fractures over faith, power, or scarcity. Decide what's left standing.",{roll:'d10'}),
     c("The Wanderer","event",1,"black","A stranger arrives bearing news, goods, or trouble.",{roll:'d10'}),
     c("Plague Year","event",2,"red","Sickness sweeps the region. The world ages one year.",{traits:['advance'],roll:'d10'}),
 
-    c("The Rules Shift","meta",1,"black","Choose any one card and alter it — change its number or rewrite its instruction.",{traits:['meta']}),
+    c("The Rules Shift","meta",1,"black","Choose any one card and alter it: change its number or rewrite its instruction.",{traits:['meta']}),
     c("Retire a Law","meta",1,"red","Send one card of your choice to the Retired pile.",{traits:['meta']}),
-    c("New Law","meta",1,"black","Forge one new card and add it to the deck — the world decides what kind.",{traits:['meta'],make:true}),
+    c("New Law","meta",1,"black","Forge one new card and add it to the deck. The world decides what kind.",{traits:['meta'],make:true}),
     c("Shuffle","meta",0,"black","Shuffle the deck. The order means nothing here, but the gesture matters.",{traits:['meta']}),
 
     c("Chronicle","lore",1,"black","Step back as an observer. Write a journal entry on the state of the world this year.",{traits:['lore']}),
-    c("A New Law of the World","lore",1,"red","Establish a new rule of this world — magic, gods, the shape of the year, the seasons, the fate of the dead. Add it to the World Rules.",{cap:'rule'}),
+    c("A New Law of the World","lore",1,"red","Establish a new rule of this world: magic, gods, the shape of the year, the seasons, the fate of the dead. Add it to the World Rules.",{cap:'rule'}),
     c("A Page of History","lore",1,"black","Set down a new piece of history. If the world is too young for history, write a piece of lore instead.",{traits:['lore'],cap:'lore'}),
-    c("A Religion Takes Hold","lore",1,"red","A new faith comes into being. Write its basic lore — its god or gods, its tenets, its faithful.",{traits:['lore'],cap:'lore'}),
-    c("A Legend Is Told","lore",1,"black","Write a legend for the lore books — a tale grown larger than the truth that birthed it.",{traits:['lore'],cap:'lore'}),
-    c("A Tragedy","lore",2,"red","Write a tragedy into the world's memory — a loss it will not forget.",{traits:['lore'],cap:'lore'}),
-    c("A Myth","lore",1,"black","Write a myth — a story the world tells to explain itself.",{traits:['lore'],cap:'lore'}),
-    c("Something Otherworldly","lore",2,"red","Record an otherworldly event — gods walking the earth, visitors from beyond, mythic beasts, giants risen.",{traits:['lore'],cap:'lore'}),
+    c("A Religion Takes Hold","lore",1,"red","A new faith comes into being. Write its basic lore: its god or gods, its tenets, its faithful.",{traits:['lore'],cap:'lore'}),
+    c("A Legend Is Told","lore",1,"black","Write a legend for the lore books: a tale grown larger than the truth that birthed it.",{traits:['lore'],cap:'lore'}),
+    c("A Tragedy","lore",2,"red","Write a tragedy into the world's memory: a loss it will not forget.",{traits:['lore'],cap:'lore'}),
+    c("A Myth","lore",1,"black","Write a myth: a story the world tells to explain itself.",{traits:['lore'],cap:'lore'}),
+    c("Something Otherworldly","lore",2,"red","Record an otherworldly event: gods walking the earth, visitors from beyond, mythic beasts, giants risen.",{traits:['lore'],cap:'lore'}),
   ];
   // Sensible starting tiers: workhorses common, flavor uncommon, momentous rare, the mythic fabled. Tweak any in the card editor.
   const TIER_BY_CAT={foundation:'common',terrain:'common',develop:'common',art:'uncommon',discovery:'uncommon',lore:'uncommon',hero:'rare',event:'rare',meta:'rare',force:'fabled'};
@@ -714,11 +714,17 @@ async function boot(){
 async function persist(){ await Store.save(S); scheduleCloudPush(); }
 // Backfill rarity on older saves: existing cards get their sensible starting tier by title, custom cards default to Uncommon.
 function migrateCards(){
-  const seedTiers=Object.fromEntries(seedDeck().map(c=>[c.title,c.tier]));
+  const seed=seedDeck();
+  const seedTiers=Object.fromEntries(seed.map(c=>[c.title,c.tier]));
+  const seedInstr=Object.fromEntries(seed.map(c=>[c.title,c.instruction]));
   [...(S.deck||[]),...(S.archive||[])].forEach(c=>{
     if(!c.tier) c.tier = seedTiers[c.title] || 'uncommon';
     if(!TIER_META[c.tier]) c.tier='uncommon';
     if(c.volatile===undefined) c.volatile = (c.tier==='universal');
+    // strip em-dashes from descriptions: starter cards adopt the cleaned seed text; custom cards get a neutral swap
+    if(c.instruction && c.instruction.indexOf('—')>=0){
+      c.instruction = seedInstr[c.title] || c.instruction.replace(/\s*—\s*/g,': ');
+    }
   });
 }
 
