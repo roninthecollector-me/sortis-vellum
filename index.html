@@ -319,6 +319,20 @@
     <div id="panelList"></div>
 
     <h3 class="sec">Places</h3>
+    <div class="form" style="max-width:560px;margin-bottom:10px">
+      <div class="split2">
+        <div class="field"><label>Name</label><input type="text" id="apName" placeholder="e.g. Ashfall"></div>
+        <div class="field"><label>Kind</label><select id="apKind"><option>Settlement</option><option>Road</option><option>Monument</option></select></div>
+      </div>
+      <div class="field"><label>Coordinate (the panel it sits on)</label>
+        <div class="coord-wide">
+          <input type="number" id="apNs" value="0" min="0"><select id="apNsD"><option>N</option><option>S</option></select>
+          <input type="number" id="apEw" value="0" min="0"><select id="apEwD"><option>E</option><option>W</option></select>
+        </div>
+      </div>
+      <button class="btn" id="apAdd" style="width:100%">Add place</button>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Settlements start as a Camp (400); grow them from the list below or with Develop cards.</div>
+    </div>
     <div id="placeList"></div>
 
     <h3 class="sec">Heroes</h3>
@@ -646,7 +660,7 @@ function seedDeck(){
     c("Old Roads","terrain",1,"black","Trace the ruined infrastructure of the old world across the panel. Cover the rolled sectors.",{space:true,smin:1,smax:20}),
 
     c("Resettlement","develop",2,"black","A people take root here. Found a Camp. The world ages one year.",{traits:['advance'],space:true,smin:1,smax:12}),
-    c("It Grows","develop",2,"black","A settlement swells. Grow it one tier (do this from the Atlas). The world ages one year.",{traits:['advance']}),
+    c("It Grows","develop",2,"black","A settlement swells. Grow it one tier (do this from the Atlas). The world ages one year.",{traits:['advance'],cap:'grow'}),
     c("The Long Road","develop",3,"black","Connect this panel to another by road, rail, or route. The world ages one year.",{traits:['advance']}),
     c("Monument","develop",1,"red","Raise a statue or monument. To whom, or to what? Cover the rolled sectors. Record it in the Lore. The world ages one year.",{traits:['advance','lore'],space:true,smin:1,smax:10}),
     c("Hard Year","develop",2,"red","Hardship sweeps the region. The world ages one year and the living suffer.",{traits:['advance']}),
@@ -721,10 +735,12 @@ function migrateCards(){
   const seed=seedDeck();
   const seedTiers=Object.fromEntries(seed.map(c=>[c.title,c.tier]));
   const seedInstr=Object.fromEntries(seed.map(c=>[c.title,c.instruction]));
+  const seedCap=Object.fromEntries(seed.map(c=>[c.title,c.cap]));
   [...(S.deck||[]),...(S.archive||[])].forEach(c=>{
     if(!c.tier) c.tier = seedTiers[c.title] || 'uncommon';
     if(!TIER_META[c.tier]) c.tier='uncommon';
     if(c.volatile===undefined) c.volatile = (c.tier==='universal');
+    if(!c.cap && seedCap[c.title]) c.cap = seedCap[c.title];
     // strip em-dashes from descriptions: starter cards adopt the cleaned seed text; custom cards get a neutral swap
     if(c.instruction && c.instruction.indexOf('—')>=0){
       c.instruction = seedInstr[c.title] || c.instruction.replace(/\s*—\s*/g,': ');
@@ -839,6 +855,12 @@ function renderAtlas(){
   const odds=document.getElementById('oddsRange'); if(odds){ odds.value=S.settings.travelOdds; document.getElementById('oddsVal').textContent=S.settings.travelOdds+'% travel · '+(100-S.settings.travelOdds)+'% stay';
     odds.oninput=()=>{ S.settings.travelOdds=+odds.value; document.getElementById('oddsVal').textContent=odds.value+'% travel · '+(100-odds.value)+'% stay'; persist(); }; }
   document.getElementById('panelCount').textContent = S.panels.length?('· '+S.panels.length):'';
+  // default the Add-a-place coordinate to the current panel (unless being edited)
+  const apc=['apNs','apNsD','apEw','apEwD']; const apEl=document.getElementById('apNs');
+  if(apEl && !apc.some(id=>document.activeElement===document.getElementById(id))){
+    const cur=S.currentPanel?parseCoord(S.currentPanel):{nm:0,nd:'N',em:0,ed:'E'};
+    setVal('apNs',cur.nm); setVal('apNsD',cur.nd); setVal('apEw',cur.em); setVal('apEwD',cur.ed);
+  }
   // panels
   const pl=document.getElementById('panelList');
   const upTip='Sign in (Settings → Cloud sync) to store panel images.';
@@ -885,6 +907,14 @@ document.getElementById('fpAdd').onclick=()=>{
   const co=normCoord(Math.max(0,parseInt(val('fpNs'))||0),val('fpNsD'),Math.max(0,parseInt(val('fpEw'))||0),val('fpEwD'));
   if(addPanel(co.pretty,val('fpTer'),S.meta.year)){ persist(); renderHeader(); renderAtlas(); }
   else alert('That panel already exists.');
+};
+document.getElementById('apAdd').onclick=()=>{
+  const name=val('apName'); if(!name){ alert('Name the place.'); return; }
+  const co=normCoord(Math.max(0,parseInt(val('apNs'))||0),val('apNsD'),Math.max(0,parseInt(val('apEw'))||0),val('apEwD'));
+  const kind=(val('apKind')||'Settlement').toLowerCase();
+  let tier,pop; if(kind==='settlement'){ tier=POP_TIERS[0][0]; pop=POP_TIERS[0][1]; }
+  S.places.push({name,kind,panel:co.link,founded:S.meta.year,tier,pop,status:'standing'});
+  setVal('apName',''); persist(); renderAtlas();
 };
 
 /* ===== panel canvas (forge) ===== */
@@ -1222,7 +1252,9 @@ function showCard(c){
   let extras='';
   if(effRoll)extras+=`<button class="act roll" id="aRoll">Roll ${effRoll}</button>`;
   if(traitSet.has('advance'))extras+=`<button class="act year" id="aYear">Advance the year (+1)</button>`;
-  const defType=c.cap||capDefault(c.category);
+  let defType=c.cap||capDefault(c.category);
+  // intent-aware fallback: a "grow a settlement" card with nothing growable yet falls back to creating one
+  if(defType==='grow' && !S.places.some(p=>p.kind==='settlement'&&tierIndex(p.tier)<POP_TIERS.length-1)) defType='place';
 
   const capInner = c.make ? makeForgeHTML() : `
       <h4>Capture for the vault</h4>
