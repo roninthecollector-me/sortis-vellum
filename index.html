@@ -204,6 +204,31 @@
   .cloud-note{font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px}
   .cloud-msg{font-family:var(--mono);font-size:10px;color:var(--verd);margin-top:8px;letter-spacing:1px;min-height:12px}
 
+  /* New-world onboarding ("a fresh vellum") */
+  .onb{display:none;position:fixed;inset:0;z-index:60;background:rgba(8,7,5,.82);align-items:center;justify-content:center;padding:24px}
+  .onb.show{display:flex}
+  .onb-card{width:460px;max-width:100%;background:linear-gradient(150deg,#efe8d8,#e6dcc6);border:1px solid #c9bda1;border-radius:11px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:24px 26px;max-height:92vh;overflow:auto;animation:flip .35s ease}
+  .onb-kick{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#9c7a1e}
+  .onb-title{font-family:var(--display);font-size:26px;color:#231d12;margin:4px 0 3px}
+  .onb-sub{font-family:var(--display);font-style:italic;font-size:13px;color:#6a5f49;margin-bottom:18px}
+  .onb-lab{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8a7c5e;margin-bottom:6px}
+  .onb-input{width:100%;background:#fbf5e6;border:1px solid #cbbfa3;border-radius:5px;padding:10px 12px;font-family:var(--display);font-size:15px;color:#231d12}
+  .onb-input:focus{outline:none;border-color:#b88a2e}
+  .onb-shapes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .onb-shape{border:1px solid #cbbfa3;border-radius:7px;background:#f3ecdb;cursor:pointer;text-align:center;padding:11px 6px;color:#8a7c5e}
+  .onb-shape.sel{border:2px solid #b88a2e;background:#f7eccb;color:#7a3320;padding:10px 5px}
+  .onb-shape .sl{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-top:5px}
+  .onb-deck{display:flex;gap:10px;align-items:flex-start;border:1px solid #cbbfa3;border-radius:7px;background:#f3ecdb;padding:11px 13px;cursor:pointer}
+  .onb-deck.sel{border:2px solid #b88a2e;background:#f7eccb;padding:10px 12px}
+  .onb-dot{width:13px;height:13px;border-radius:50%;border:1px solid #b88a2e;margin-top:3px;flex:none}
+  .onb-deck.sel .onb-dot{background:#b88a2e;box-shadow:inset 0 0 0 2px #f3ecdb}
+  .onb-dh{font-family:var(--display);font-size:14px;color:#231d12}
+  .onb-dd{font-family:var(--display);font-size:12px;color:#6a5f49}
+  .onb-go{font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#f0e6cf;background:#9c3a2f;border:1px solid #7a3320;border-radius:6px;padding:11px 18px;cursor:pointer}
+  .onb-go:hover{background:#7a3320}
+  .onb-cancel{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:#8a7c5e;background:none;border:none;cursor:pointer}
+  .onb-cancel:hover{color:#7a3320}
+
   /* Atlas — panel image chips */
   .pimg{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:6px}
   .gchip{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid var(--verd-deep);color:var(--verd);display:inline-flex;align-items:center;gap:5px}
@@ -527,7 +552,14 @@
     <h3 class="sec">World</h3>
     <div class="form" style="max-width:560px">
       <div class="field" style="margin:0"><label>World name</label><input type="text" id="setWorld" maxlength="40" placeholder="Name your world"></div>
-      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Shown in the top-left and used in your Chronicle export.</div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin:8px 0 14px">Shown in the top-left and used in your Chronicle export.</div>
+      <div class="field" style="margin:0"><label>Panel shape</label>
+        <select id="setShape">
+          <option value="portrait">Portrait — 8×10 (tall)</option>
+          <option value="square">Square — e.g. 4×4</option>
+          <option value="landscape">Landscape — 10×8 (wide)</option>
+        </select></div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Sets the cell shape across the Map and panel templates.</div>
     </div>
 
     <h3 class="sec">Cloud sync</h3>
@@ -577,6 +609,31 @@
       <div style="font-size:13px;color:var(--ash);line-height:1.6">AI was used to build this tool. That is the full extent of its use here. No data is collected that we would ever share, your worlds and uploads remain entirely yours, and nothing you create is ever accessed by people or AI, or used to train AI models.</div>
     </div>
   </section>
+</div>
+<div class="onb" id="onb">
+  <div class="onb-card">
+    <div class="onb-kick">A new vellum</div>
+    <div class="onb-title">Begin a new world</div>
+    <div class="onb-sub">The deck proposes the chaos. You author the meaning.</div>
+    <div class="onb-lab">World name</div>
+    <input class="onb-input" id="onbName" maxlength="40" placeholder="The Sortis Vellum" style="margin-bottom:18px">
+    <div class="onb-lab">Panel format</div>
+    <div class="onb-shapes" id="onbShapes" style="margin-bottom:18px">
+      <div class="onb-shape sel" data-shape="portrait"><svg width="26" height="34" viewBox="0 0 26 34"><rect x="1" y="1" width="24" height="32" rx="2" fill="#e3d7bb" stroke="#7a6a45"/></svg><div class="sl">8 × 10</div></div>
+      <div class="onb-shape" data-shape="square"><svg width="30" height="34" viewBox="0 0 30 34"><rect x="2" y="5" width="26" height="26" rx="2" fill="#e3d7bb" stroke="#7a6a45"/></svg><div class="sl">Square</div></div>
+      <div class="onb-shape" data-shape="landscape"><svg width="34" height="34" viewBox="0 0 34 34"><rect x="1" y="7" width="32" height="20" rx="2" fill="#e3d7bb" stroke="#7a6a45"/></svg><div class="sl">Landscape</div></div>
+    </div>
+    <div class="onb-lab">Starter deck</div>
+    <div id="onbDeck" style="display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+      <div class="onb-deck sel" data-deck="starter"><div class="onb-dot"></div><div><div class="onb-dh">The survivor's almanac</div><div class="onb-dd">The curated starter deck — foundations, terrain, heroes, lore, events. Recommended.</div></div></div>
+      <div class="onb-deck" data-deck="empty"><div class="onb-dot"></div><div><div class="onb-dh">Empty vellum</div><div class="onb-dd">Start from scratch and forge every card yourself.</div></div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <button class="onb-cancel" id="onbCancel" style="display:none">Cancel</button>
+      <span id="onbFoot" style="font-family:var(--mono);font-size:9px;letter-spacing:1px;color:#8a7c5e">Change any of this later in Settings</span>
+      <button class="onb-go" id="onbGo">Forge the world</button>
+    </div>
+  </div>
 </div>
 <canvas id="panelCv" width="2400" height="3000"></canvas>
 
@@ -725,13 +782,15 @@ function uid(){return Math.random().toString(36).slice(2,9);}
 
 async function boot(){
   const saved=await Store.load();
+  let firstRun=false;
   if(saved && saved.deck){ S=saved; }
-  else { S.deck=seedDeck(); await persist(); }
+  else { firstRun=true; }   // brand-new visitor → onboarding decides the deck/shape/name
   S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
   S.panels.forEach(p=>{ p.images=p.images||{}; });
   migrateCards();
   pickQuote();
   renderAll();
+  if(firstRun) openOnboard();
   initCloud();
 }
 async function persist(){ await Store.save(S); scheduleCloudPush(); }
@@ -773,7 +832,7 @@ async function pullCloud(){
   try{
     const { data, error } = await sb.from('worlds').select('data').eq('user_id', sbUser.id).maybeSingle();
     if(error) throw error;
-    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); migrateCards(); await Store.save(S); pickQuote(); renderAll(); flag('synced from cloud'); }
+    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); migrateCards(); await Store.save(S); pickQuote(); renderAll(); closeOnboard(); flag('synced from cloud'); }
     else { await pushCloud(); } // first sign-in: seed the cloud from this device
   }catch(e){ console.warn('cloud pull failed', e); }
 }
@@ -813,11 +872,36 @@ function syncStarterCards(){
   persist(); renderDeck();
   alert('Added '+additions.length+' new card'+(additions.length===1?'':'s')+' to your deck: '+additions.map(c=>c.title).join(', '));
 }
-function resetWorld(){
-  if(!confirm('Start a fresh world? This erases your panels, places, heroes, world rules, chronicle, and any deck edits, and reseeds the starter deck. Export a backup first if you want to keep this one.')) return;
-  const world=S.meta.world||'The Sortis Vellum';
-  S={ meta:{world,year:0,draws:0}, settings:{travelOdds:50}, deck:seedDeck(), archive:[], panels:[], currentPanel:null, places:[], heroes:[], rules:[], log:[], loreSeq:{} };
-  persist(); pickQuote(); renderAll(); switchView('draw');
+function resetWorld(){ openOnboard({reset:true}); }
+/* ===== new-world onboarding ===== */
+let onbReset=false;
+function openOnboard(opts){
+  opts=opts||{}; onbReset=!!opts.reset;
+  setVal('onbName', onbReset?(S.meta.world||''):'');
+  const shape=(onbReset&&S.settings&&S.settings.panelShape)||'portrait';
+  document.querySelectorAll('#onbShapes .onb-shape').forEach(el=>el.classList.toggle('sel', el.dataset.shape===shape));
+  document.querySelectorAll('#onbDeck .onb-deck').forEach(el=>el.classList.toggle('sel', el.dataset.deck==='starter'));
+  document.getElementById('onbCancel').style.display=onbReset?'inline-block':'none';
+  document.getElementById('onb').classList.add('show');
+  setTimeout(()=>{ const n=document.getElementById('onbName'); if(n) n.focus(); },60);
+}
+function closeOnboard(){ const o=document.getElementById('onb'); if(o) o.classList.remove('show'); }
+function forgeNewWorld(name,shape,deckChoice){
+  S={ meta:{world:name||'The Sortis Vellum',year:0,draws:0}, settings:{travelOdds:50,panelShape:shape||'portrait'},
+      deck: deckChoice==='empty'?[]:seedDeck(), archive:[], panels:[], currentPanel:null, places:[], heroes:[], rules:[], log:[], loreSeq:{} };
+  persist(); pickQuote(); renderAll(); closeOnboard(); switchView('draw');
+}
+function wireOnboard(){
+  document.querySelectorAll('#onbShapes .onb-shape').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#onbShapes .onb-shape').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); });
+  document.querySelectorAll('#onbDeck .onb-deck').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#onbDeck .onb-deck').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); });
+  document.getElementById('onbCancel').onclick=closeOnboard;
+  document.getElementById('onbGo').onclick=()=>{
+    if(onbReset && !confirm('Forge a new world? This erases your current panels, places, heroes, world rules, chronicle, and deck edits. Export a backup first if you want to keep this one.')) return;
+    const name=val('onbName')||'The Sortis Vellum';
+    const shape=(document.querySelector('#onbShapes .onb-shape.sel')||{}).dataset?.shape||'portrait';
+    const deck=(document.querySelector('#onbDeck .onb-deck.sel')||{}).dataset?.deck||'starter';
+    forgeNewWorld(name,shape,deck);
+  };
 }
 
 /* ===== helpers ===== */
@@ -846,6 +930,7 @@ function renderHeader(){
   document.getElementById('hDraws').textContent=S.meta.draws;
   document.getElementById('hCur').textContent=S.currentPanel||'—';
   const sw=document.getElementById('setWorld'); if(sw && document.activeElement!==sw) sw.value=S.meta.world;
+  const ss=document.getElementById('setShape'); if(ss) ss.value=(S.settings&&S.settings.panelShape)||'portrait';
   if(!current){ const ds=document.getElementById('drawStage'); if(ds && !ds.querySelector('.card-face')) resetStage(); }
 }
 
@@ -924,7 +1009,8 @@ document.getElementById('apAdd').onclick=()=>{
 
 /* ===== panel canvas (forge) ===== */
 function drawPanelCanvas(s){
-  const cv=document.getElementById('panelCv'),ctx=cv.getContext('2d'),W=2400,H=3000,IN=300;
+  const cv=document.getElementById('panelCv'),ctx=cv.getContext('2d'),W=2400,H=Math.round(2400*panelAspect()),IN=300;
+  cv.width=W; cv.height=H;
   const RR=(x,y,w,h,r)=>{ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();};
   ctx.fillStyle='#ece4d1';ctx.fillRect(0,0,W,H);
   ctx.strokeStyle='rgba(120,100,70,0.10)';ctx.lineWidth=1;
@@ -1030,7 +1116,9 @@ async function signedUrl(path){
 }
 
 let mapGen=null, mapView={scale:1,x:0,y:0}, mapViewInit=false, mapObserver=null, mapWired=false;
-const MAP_CW=128, MAP_CH=160, MAP_GAP=8;   // cells match the 8×10 (4:5 portrait) panel format
+const MAP_CW=128, MAP_GAP=8;
+// Per-world panel shape → cell aspect (height ÷ width). Default 8×10 portrait.
+function panelAspect(){ const s=(S.settings&&S.settings.panelShape)||'portrait'; return s==='square'?1:(s==='landscape'?0.8:1.25); }
 function applyMapTransform(){ const c=document.getElementById('mapCanvas'); if(c) c.style.transform='translate('+mapView.x+'px,'+mapView.y+'px) scale('+mapView.scale+')'; }
 function centerMap(){
   const stage=document.getElementById('mapStage'), c=document.getElementById('mapCanvas'); if(!stage||!c) return;
@@ -1061,6 +1149,7 @@ function renderMap(){
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   const pos=S.panels.map(p=>{ const c=parseCoord(p.coord); const x=(c.ed==='W'?-c.em:c.em), y=-(c.nd==='S'?-c.nm:c.nm);
     minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y); return {p,x,y}; });
+  const MAP_CH=Math.round(MAP_CW*panelAspect());
   const cols=maxX-minX+1, rows=maxY-minY+1, stepX=MAP_CW+MAP_GAP, stepY=MAP_CH+MAP_GAP, en=imagesEnabled();
   canvas.style.width=(cols*stepX-MAP_GAP)+'px'; canvas.style.height=(rows*stepY-MAP_GAP)+'px';
   canvas.innerHTML=pos.map(({p,x,y})=>{
@@ -1505,6 +1594,12 @@ function commitToWorld(co){
 
 function resetStage(){
   const stage=document.getElementById('drawStage');
+  if(!S.deck.length){
+    stage.innerHTML=`<div class="empty" style="max-width:360px">Your deck is empty — a blank vellum. <b>Forge a Card</b> to begin, then return here to draw.</div>
+      <button class="act year" id="goForge" style="margin-top:14px">Go to Forge a Card</button>`;
+    document.getElementById('goForge').onclick=()=>switchView('forge');
+    return;
+  }
   stage.innerHTML=`<button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>
     <div class="working" style="margin-top:16px">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>`;
   document.getElementById('deckBtn').onclick=drawCard;
@@ -1752,6 +1847,7 @@ document.getElementById('resetWorld').onclick=resetWorld;
 document.getElementById('addRule').onclick=()=>{const inp=document.getElementById('newRule');const t=inp.value.trim();if(!t)return;S.rules.push({text:t,year:S.meta.year});inp.value='';persist();renderWorldRules();};
 document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.getElementById('addRule').click();};
 document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
+document.getElementById('setShape').onchange=e=>{ S.settings=S.settings||{}; S.settings.panelShape=e.target.value; mapViewInit=false; persist(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); };
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
 function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
@@ -1759,6 +1855,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.
 resetStage();
 initMapUI();
 initObsidianUI();
+wireOnboard();
 boot();
 </script>
 </body>
