@@ -3,25 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Sortis Vellum — Worldbuilder v0.2</title>
+<title>The Sortis Vellum · Worldbuilder v0.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#1a1714;--soil:#242019;--soil2:#2c271f;
-    --bone:#e9e1d0;--bone-dim:#d4cab4;
-    --ember:#a6362f;--ember-soft:#c2554c;
-    --verd:#6f8b78;--verd-deep:#3c4d43;
-    --gold:#c9a24b;--ash:#8a8174;--ash-dim:#5f594e;--line:#3a3429;
-    --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --body:Georgia,"Times New Roman",serif;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --bone:#ece4d4;--bone-dim:#d4cab4;
+    --ember:#a6362f;--ember-soft:#c2554c;          /* red ink: a mechanic, kept exact */
+    --verd:#7fa890;--verd-deep:#3c4d43;
+    --gold:#d2ab57;--ash:#8a8174;--ash-dim:#5f594e;--line:#3a3429;
+    --display:"Fraunces","Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --body:"Newsreader",Georgia,"Times New Roman",serif;
+    --mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#2a251d,transparent 60%),var(--ink);
-    color:var(--bone-dim);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased}
+    color:var(--bone-dim);font-family:var(--body);font-optical-sizing:auto;min-height:100vh;-webkit-font-smoothing:antialiased}
+  /* cartographic chrome: a thin chart frame with corner registration marks */
+  .frame{position:fixed;inset:0;z-index:8;pointer-events:none}
+  .frame .rule{position:absolute;inset:9px;border:1px solid var(--line);border-radius:2px}
+  .reg{position:absolute;width:13px;height:13px;color:var(--ash-dim)}
+  .reg::before,.reg::after{content:"";position:absolute;background:currentColor}
+  .reg::before{left:50%;top:0;width:1px;height:100%;transform:translateX(-.5px)}
+  .reg::after{top:50%;left:0;height:1px;width:100%;transform:translateY(-.5px)}
+  .reg.tl{left:4px;top:4px}.reg.tr{right:4px;top:4px}.reg.bl{left:4px;bottom:4px}.reg.br{right:4px;bottom:4px}
   .wrap{max-width:1000px;margin:0 auto;padding:22px 20px 80px}
   header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding-bottom:16px}
-  .brand h1{font-family:var(--display);font-weight:500;font-size:27px;margin:0;color:var(--bone);letter-spacing:.5px}
-  .brand .sub{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash);margin-top:4px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .brand .seal{width:36px;height:36px;flex:0 0 auto;color:var(--gold)}
+  .brand h1{font-family:var(--display);font-weight:500;font-size:28px;margin:0;color:var(--bone);letter-spacing:-.3px;line-height:1}
+  .brand .sub{font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--ash);margin-top:5px}
   .clock{display:flex;gap:16px;align-items:flex-end}
   .stat{text-align:right}
   .stat .v{font-family:var(--mono);font-size:20px;color:var(--gold);line-height:1}
@@ -41,6 +54,13 @@
   .draw-quote{max-width:440px;margin:2px auto 22px;text-align:center;font-family:var(--display);font-style:italic;font-size:16px;line-height:1.55;color:var(--bone-dim)}
   .draw-quote::before{content:"";display:block;width:34px;height:1px;background:var(--gold);margin:0 auto 14px}
   .draw-stage{display:flex;flex-direction:column;align-items:center;padding:10px 0}
+  .draw-welcome{max-width:460px;text-align:center;margin:0 auto 24px}
+  .draw-welcome .stamp{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);display:inline-flex;align-items:center;gap:9px;margin-bottom:14px}
+  .draw-welcome .stamp::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+  .draw-welcome p{font-family:var(--body);font-size:15.5px;line-height:1.65;color:var(--bone-dim);margin:0 auto;max-width:42ch}
+  .draw-welcome .reassure{font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin-top:14px}
+  .tab:focus-visible,.deck-btn:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){.view.active{animation:none}}
   .deck-btn{position:relative;width:210px;height:294px;border-radius:6px;cursor:pointer;border:none;
     background:linear-gradient(150deg,#332c22,#211c15);
     box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
@@ -129,7 +149,9 @@
   /* generic */
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
   .toolbar h2{font-family:var(--display);font-weight:500;font-size:20px;margin:0;color:var(--bone)}
-  h3.sec{font-family:var(--display);font-weight:500;font-size:17px;color:var(--bone);margin:22px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  h3.sec{font-family:var(--display);font-weight:500;font-size:18px;color:var(--bone);margin:24px 0 12px;padding-bottom:9px;position:relative;letter-spacing:-.2px}
+  h3.sec::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;border-bottom:1px solid var(--line);
+    background-image:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 24px)}
   .row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:6px;background:var(--soil);margin-bottom:7px}
   .rnum{font-family:var(--display);font-size:20px;text-align:center;min-width:24px}
   .rnum.red{color:var(--ember-soft)}.rnum.black{color:var(--bone)}
@@ -287,9 +309,20 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div class="frame" aria-hidden="true"><div class="rule"></div><i class="reg tl"></i><i class="reg tr"></i><i class="reg bl"></i><i class="reg br"></i></div>
 <div class="wrap">
   <header>
-    <div class="brand"><h1 id="worldName">The Sortis Vellum</h1><div class="sub">Worldbuilder · v0.2</div></div>
+    <div class="brand">
+      <svg class="seal" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width=".6" opacity=".5"/>
+        <path d="M50 7 L56 50 L50 93 L44 50 Z" fill="#c2554c"/>
+        <path d="M7 50 L50 44 L93 50 L50 56 Z" fill="none" stroke="#7fa890" stroke-width="1.4"/>
+        <path d="M22 22 L52 48 M78 22 L48 48 M22 78 L48 52 M78 78 L52 52" stroke="currentColor" stroke-width=".7" opacity=".55"/>
+        <circle cx="50" cy="50" r="3.4" fill="currentColor"/>
+      </svg>
+      <div><h1 id="worldName">The Sortis Vellum</h1><div class="sub">Worldbuilder · v0.2</div></div>
+    </div>
     <div class="clock">
       <div class="stat cur"><div class="v" id="hCur">—</div><div class="l">Current Panel</div></div>
       <div class="stat"><div class="v" id="hYear">Yr 0</div><div class="l">World Age</div></div>
@@ -416,11 +449,11 @@
       </div>
       <div class="field"><label>Rarity</label>
         <select id="fTier">
-          <option value="common">Common — surfaces often</option>
-          <option value="uncommon" selected>Uncommon — baseline</option>
-          <option value="rare">Rare — a treat</option>
-          <option value="fabled">Fabled — once in a world</option>
-          <option value="universal">Universal — volatile: settles toward common, or is destroyed</option>
+          <option value="common">Common · surfaces often</option>
+          <option value="uncommon" selected>Uncommon · baseline</option>
+          <option value="rare">Rare · a treat</option>
+          <option value="fabled">Fabled · once in a world</option>
+          <option value="universal">Universal · volatile: settles toward common, or is destroyed</option>
         </select>
       </div>
       <div class="field"><label>Instruction</label><textarea id="fInstr" placeholder="What the explorer does when this turns up."></textarea></div>
@@ -555,9 +588,9 @@
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin:8px 0 14px">Shown in the top-left and used in your Chronicle export.</div>
       <div class="field" style="margin:0"><label>Panel shape</label>
         <select id="setShape">
-          <option value="portrait">Portrait — 8×10 (tall)</option>
-          <option value="square">Square — e.g. 4×4</option>
-          <option value="landscape">Landscape — 10×8 (wide)</option>
+          <option value="portrait">Portrait · 8×10 (tall)</option>
+          <option value="square">Square · e.g. 4×4</option>
+          <option value="landscape">Landscape · 10×8 (wide)</option>
         </select></div>
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Sets the cell shape across the Map and panel templates.</div>
     </div>
@@ -580,7 +613,7 @@
 
     <h3 class="sec">Deck &amp; world</h3>
     <div class="form" style="max-width:560px">
-      <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px">New starter cards arrive in updates. Pull them into your existing deck without disturbing your edits — or wipe everything and begin again.</div>
+      <div style="font-size:13px;color:var(--ash);line-height:1.55;margin-bottom:12px">New starter cards arrive in updates. Pull them into your existing deck without disturbing your edits, or wipe everything and begin again.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <button class="btn ghost" id="syncCards">Load new starter cards</button>
         <button class="btn ghost" id="resetWorld">Start a fresh world</button>
@@ -625,7 +658,7 @@
     </div>
     <div class="onb-lab">Starter deck</div>
     <div id="onbDeck" style="display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
-      <div class="onb-deck sel" data-deck="starter"><div class="onb-dot"></div><div><div class="onb-dh">The survivor's almanac</div><div class="onb-dd">The curated starter deck — foundations, terrain, heroes, lore, events. Recommended.</div></div></div>
+      <div class="onb-deck sel" data-deck="starter"><div class="onb-dot"></div><div><div class="onb-dh">The survivor's almanac</div><div class="onb-dd">A curated deck of prompt cards to start with. Each draw tells you what to create next: a panel, terrain, a hero, lore, an event. Recommended.</div></div></div>
       <div class="onb-deck" data-deck="empty"><div class="onb-dot"></div><div><div class="onb-dh">Empty vellum</div><div class="onb-dd">Start from scratch and forge every card yourself.</div></div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
@@ -1444,7 +1477,7 @@ function makeForgeHTML(){
         <option value="uncommon" selected>Uncommon</option>
         <option value="rare">Rare</option>
         <option value="fabled">Fabled</option>
-        <option value="universal">Universal — volatile</option>
+        <option value="universal">Universal · volatile</option>
       </select></div>
     <div class="cap-row"><label>Title</label><input type="text" id="mkTitle" placeholder="Name this card"></div>
     <div class="cap-row"><label>Instruction</label><textarea id="mkInstr" placeholder="What the explorer does when this turns up."></textarea></div>
@@ -1486,7 +1519,7 @@ function renderCaptureFields(type){
   else if(type==='place'){html=txtRow('capName','Name','e.g. Ashfall')+selRow('capKind','Kind',['Settlement','Road','Monument'],'Settlement')+coordWidget();}
   else if(type==='grow'){
     const setts=S.places.filter(p=>p.kind==='settlement'&&tierIndex(p.tier)<POP_TIERS.length-1);
-    html = setts.length? `<div class="cap-row"><label>Settlement to grow</label><select id="capGrow">`+setts.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} — ${p.tier} → ${nextTier(p.tier)[0]}</option>`).join('')+`</select></div>` : `<div class="cap-row" style="font-family:var(--mono);font-size:11px;color:var(--ash-dim)">No settlements that can grow yet.</div>`;
+    html = setts.length? `<div class="cap-row"><label>Settlement to grow</label><select id="capGrow">`+setts.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} · ${p.tier} → ${nextTier(p.tier)[0]}</option>`).join('')+`</select></div>` : `<div class="cap-row" style="font-family:var(--mono);font-size:11px;color:var(--ash-dim)">No settlements that can grow yet.</div>`;
   }
   else if(type==='hero'){const a=current&&current.lastRoll?current.lastRoll.value:'';html=txtRow('capName','Name','e.g. Vaelin Cross')+`<div class="cap-row"><label>Alignment (1 villain – 10 paragon)</label><input type="number" id="capAlign" min="1" max="10" value="${a}"></div>`+coordWidget();}
   else if(type==='lore'){html=selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget();}
@@ -1600,8 +1633,21 @@ function resetStage(){
     document.getElementById('goForge').onclick=()=>switchView('forge');
     return;
   }
-  stage.innerHTML=`<button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>
-    <div class="working" style="margin-top:16px">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>`;
+  const firstRun=(S.meta.draws||0)===0 && !S.panels.length;
+  const q=document.getElementById('drawQuote');
+  if(firstRun){
+    if(q) q.textContent='';
+    stage.innerHTML=`<div class="draw-welcome">
+        <div class="stamp">N0 E0 · A blank vellum</div>
+        <p>The deck decides what comes next; you give it meaning. Draw to found panels, shape terrain, raise heroes, and write the lore of a world that grows one card at a time.</p>
+        <div class="reassure">Saved in your browser · no account needed</div>
+      </div>
+      <button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw the first card</span></span></button>
+      <div class="working" style="margin-top:16px">A fresh world · ${S.deck.length} cards in the deck</div>`;
+  } else {
+    stage.innerHTML=`<button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>
+      <div class="working" style="margin-top:16px">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>`;
+  }
   document.getElementById('deckBtn').onclick=drawCard;
 }
 
