@@ -84,9 +84,12 @@
 
   /* skinnable card vars — a skin resets paper/edge/texture/ink; ink NUMBER (red/black) stays reserved below */
   .card-face{--card-paper:linear-gradient(135deg,#efe8d8,#e3d9c3);--card-edge:#c9bda1;--card-texture:none;
-    --card-ink:#231d12;--card-ink2:#3a3122;--card-sub:#6a5f49;--card-rule:#cbbfa3;--seal-edge:#b7a988;
+    --card-ink:#231d12;--card-ink2:#3a3122;--card-sub:#6a5f49;--card-rule:#cbbfa3;--seal-edge:#b7a988;--glow:rgba(150,132,92,.55);
     width:300px;border-radius:8px;background:var(--card-texture),var(--card-paper);color:#15120d;
-    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;border:1px solid var(--card-edge);margin-top:14px;animation:flip .4s ease}
+    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;z-index:0;border:1px solid var(--card-edge);margin-top:14px;animation:flip .4s ease}
+  /* glow halo behind the card — flares hard on reveal, settles to a resting glow (tier sets --glow) */
+  .card-face::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:8px;box-shadow:0 0 60px 12px var(--glow);animation:revealGlow .8s ease both}
+  @keyframes revealGlow{0%{opacity:0;box-shadow:0 0 0 0 var(--glow)}38%{opacity:1;box-shadow:0 0 150px 48px var(--glow)}100%{opacity:1;box-shadow:0 0 60px 12px var(--glow)}}
   @keyframes flip{from{opacity:0;transform:rotateY(26deg) translateY(8px)}to{opacity:1;transform:none}}
   .card-num{position:absolute;top:13px;right:17px;font-family:var(--display);font-size:38px;line-height:1;font-weight:600}
   .card-num.black{color:#15120d}.card-num.red{color:var(--ember)}
@@ -117,15 +120,17 @@
   .card-face.tier-rare .card-rarity{color:#3c4d43;border-color:#6f8b78}
   .card-face.tier-fabled .card-rarity{color:#9c7a1e;border-color:#c9a24b}
   .card-face.tier-universal .card-rarity{color:#6a4a9a;border-color:#9a6fc4}
-  .card-face.tier-uncommon{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 22px rgba(201,162,75,.16)}
-  .card-face.tier-rare{border-color:#6f8b78;box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 26px rgba(111,139,120,.5)}
-  .card-face.tier-fabled{border-color:#c9a24b;background:linear-gradient(135deg,#f3ecda,#e9dcbf);box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 34px rgba(201,162,75,.6)}
-  .card-face.tier-universal{border-color:#9a6fc4;background:linear-gradient(135deg,#ece6f2,#ddd2ea)}
-  .card-face.volatile{animation:flip .4s ease, cardPulse 2.6s .5s ease-in-out infinite}
-  @keyframes cardPulse{0%,100%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 18px rgba(168,111,208,.4)}50%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 40px rgba(168,111,208,.85)}}
+  .card-face.tier-uncommon{--glow:rgba(201,162,75,.6)}
+  .card-face.tier-rare{border-color:#6f8b78;--glow:rgba(111,170,135,.85)}
+  .card-face.tier-fabled{border-color:#c9a24b;background:linear-gradient(135deg,#f3ecda,#e9dcbf);--glow:rgba(214,170,70,1)}
+  .card-face.tier-universal{border-color:#9a6fc4;background:linear-gradient(135deg,#ece6f2,#ddd2ea);--glow:rgba(178,116,222,1)}
+  /* Universal keeps breathing after the reveal flare */
+  .card-face.volatile::before{animation:revealGlow .8s ease both, glowPulse 2.6s .8s ease-in-out infinite}
+  @keyframes glowPulse{0%,100%{box-shadow:0 0 55px 12px var(--glow)}50%{box-shadow:0 0 110px 34px var(--glow)}}
 
   /* ===== card skins (paper/edge/texture/ink only; rarity border+glow+seal still win) ===== */
-  body[data-skin="vellum"] .card-face{--card-paper:linear-gradient(135deg,#f7f2e6,#efe7d4);--card-edge:#dccfb5;--card-ink:#1c1812;--card-ink2:#2f281c;--card-sub:#766b53;--card-rule:#ddd2b8;--seal-edge:#cabd9d}
+  body[data-skin="vellum"] .card-face{--card-paper:linear-gradient(135deg,#f7f5ee,#edeee8);--card-edge:#cbcdc2;--card-ink:#1b1e19;--card-ink2:#33372f;--card-sub:#6e7268;--card-rule:#d4d7cd;--seal-edge:#c3c6bb;
+    box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 7px #f1f1ea,inset 0 0 0 8px #c0c3b8}
   body[data-skin="foxed"] .card-face{--card-paper:linear-gradient(135deg,#e7d7b9,#d6c098);--card-edge:#b09a73;--card-ink:#2a2013;--card-ink2:#473722;--card-sub:#7c6a45;--card-rule:#c2ad84;--seal-edge:#b29a6e;
     --card-texture:radial-gradient(circle at 18% 26%,rgba(120,86,44,.20) 0 5px,transparent 6px),radial-gradient(circle at 78% 62%,rgba(120,86,44,.15) 0 8px,transparent 9px),radial-gradient(circle at 52% 86%,rgba(120,86,44,.12) 0 4px,transparent 5px),radial-gradient(circle at 88% 18%,rgba(120,86,44,.10) 0 3px,transparent 4px)}
   body[data-skin="cartographer"] .card-face{--card-paper:linear-gradient(135deg,#eef1ea,#e1e6db);--card-edge:#bcc3b2;--card-ink:#1f2a33;--card-ink2:#36424c;--card-sub:#5b6a5e;--card-rule:#c4ccbf;--seal-edge:#b6bfac;
