@@ -61,9 +61,9 @@
   .draw-welcome .reassure{font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin-top:14px}
   .tab:focus-visible,.deck-btn:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   @media(prefers-reduced-motion:reduce){.view.active{animation:none}}
-  .deck-btn{position:relative;width:210px;height:294px;border-radius:6px;cursor:pointer;border:none;
+  .deck-btn{position:relative;width:300px;height:380px;border-radius:8px;cursor:pointer;border:none;margin-top:14px;
     background:linear-gradient(150deg,#332c22,#211c15);
-    box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
+    box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
     display:flex;align-items:center;justify-content:center;transition:transform .18s,box-shadow .18s}
   .deck-btn:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(0,0,0,.6),inset 0 0 0 1px var(--gold),inset 0 0 60px rgba(0,0,0,.4)}
   .deck-mark{font-family:var(--display);color:var(--ash);text-align:center}
@@ -73,7 +73,7 @@
   .working b{color:var(--verd)}
 
   /* travel + sectors banners */
-  .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:330px;margin-top:6px}
+  .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;width:330px;min-height:84px;margin-top:6px}
   .meta-chip{flex:1;min-width:150px;border:1px solid var(--line);border-radius:8px;padding:11px 14px;background:var(--soil);text-align:center}
   .meta-chip .ml{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-bottom:5px}
   .meta-chip .mv{font-family:var(--display);font-size:22px;color:var(--bone)}
@@ -85,8 +85,9 @@
   /* skinnable card vars — a skin resets paper/edge/texture/ink; ink NUMBER (red/black) stays reserved below */
   .card-face{--card-paper:linear-gradient(135deg,#efe8d8,#e3d9c3);--card-edge:#c9bda1;--card-texture:none;
     --card-ink:#231d12;--card-ink2:#3a3122;--card-sub:#6a5f49;--card-rule:#cbbfa3;--seal-edge:#b7a988;--glow:rgba(150,132,92,.55);
-    width:300px;border-radius:8px;background:var(--card-texture),var(--card-paper);color:#15120d;
-    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;z-index:0;border:1px solid var(--card-edge);margin-top:14px;animation:flip .4s ease}
+    width:300px;min-height:380px;display:flex;flex-direction:column;border-radius:8px;background:var(--card-texture),var(--card-paper);color:#15120d;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:22px 22px 20px;position:relative;z-index:0;border:1px solid var(--card-edge);margin-top:14px;animation:flip .4s ease}
+  .card-head{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:2px}
   /* glow halo behind the card — flares hard on reveal, settles to a resting glow (tier sets --glow) */
   .card-face::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:8px;box-shadow:0 0 60px 12px var(--glow);animation:revealGlow .8s ease both}
   @keyframes revealGlow{0%{opacity:0;box-shadow:0 0 0 0 var(--glow)}38%{opacity:1;box-shadow:0 0 150px 48px var(--glow)}100%{opacity:1;box-shadow:0 0 60px 12px var(--glow)}}
@@ -96,7 +97,8 @@
   .card-seal{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--card-sub);border:1px solid var(--seal-edge);border-radius:20px;padding:4px 10px;display:inline-block}
   .card-title{font-family:var(--display);font-size:23px;margin:13px 0 7px;color:var(--card-ink);padding-right:46px}
   .card-instr{font-size:14px;color:var(--card-ink2);line-height:1.55}
-  .card-dir{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--card-sub);margin-top:14px;border-top:1px solid var(--card-rule);padding-top:9px}
+  .card-instr{margin-bottom:14px}
+  .card-dir{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--card-sub);margin-top:auto;border-top:1px solid var(--card-rule);padding-top:9px}
   .card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;width:300px;justify-content:center}
   .act{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;border-radius:4px;cursor:pointer;border:1px solid var(--line);background:var(--soil);color:var(--bone-dim)}
   .act:hover{background:var(--soil2);border-color:var(--ash-dim)}
@@ -144,13 +146,10 @@
   .flip3d-front{margin-top:0;animation:none;transform:rotateY(180deg)}   /* the 3D flip supplies the motion now */
   .flip3d-front::before{animation-delay:.52s}                            /* hold the glow flare until the face turns toward us */
   .flip3d-back{position:absolute;inset:0;transform:rotateY(0deg)}
-  .card-back{position:absolute;inset:0;border-radius:8px;border:1px solid #b39b6f;box-shadow:0 16px 40px rgba(0,0,0,.55);
-    background:linear-gradient(135deg,#d9c9a6,#c6b083);display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .cb-frame{position:absolute;inset:13px;border:1px solid rgba(92,72,42,.55);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
-    background:repeating-linear-gradient(45deg,rgba(120,95,55,.06) 0 7px,transparent 7px 14px)}
-  .cb-mark{font-family:var(--display);font-size:50px;line-height:1;color:#5a4a2c;text-shadow:0 1px 0 rgba(255,255,255,.25)}
-  .cb-name{font-family:var(--display);font-size:19px;letter-spacing:.5px;color:#3a2f15}
-  .cb-sub{font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#6a5836}
+  /* back === the deck card, so clicking the deck flips the same card over */
+  .card-back{position:absolute;inset:0;border-radius:8px;border:none;
+    background:linear-gradient(150deg,#332c22,#211c15);box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center}
 
   /* Capture */
   .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
@@ -673,7 +672,7 @@
       <div style="display:flex;justify-content:center;margin-top:16px">
         <div class="card-face tier-common" style="margin-top:0;animation:none;cursor:default;pointer-events:none">
           <div class="card-num black">3</div>
-          <span class="card-seal">Lore</span><span class="card-rarity">Common</span>
+          <div class="card-head"><span class="card-seal">Lore</span><span class="card-rarity">Common</span></div>
           <div class="card-title">A Legend Is Told</div>
           <div class="card-instr">A story takes root on this panel. Name the legend, choose its theme, and write the tale your people will remember.</div>
           <div class="card-dir">3 steps · black · clockwise</div>
@@ -1609,12 +1608,10 @@ function showCard(c){
     <div class="draw-meta">${travelHtml}${sectorHtml}</div>
     <div class="flip3d" id="flipCard">
       <div class="flip3d-inner">
-        <div class="flip3d-back"><div class="card-back"><div class="cb-frame">
-          <div class="cb-mark">✚</div><div class="cb-name">The Sortis Vellum</div><div class="cb-sub">Draw</div>
-        </div></div></div>
+        <div class="flip3d-back"><div class="card-back"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></div></div>
         <div class="card-face flip3d-front tier-${dt}${c.volatile?' volatile':''}">
           <div class="card-num ${c.color}">${c.number}</div>
-          <span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span>
+          <div class="card-head"><span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span></div>
           <div class="card-title">${esc(c.title)}</div>
           <div class="card-instr">${esc(c.instruction)}</div>
           <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
@@ -1629,7 +1626,7 @@ function showCard(c){
 
   // show the card back, then flip it over to reveal the drawn face
   const flip=document.getElementById('flipCard');
-  if(flip) requestAnimationFrame(()=>setTimeout(()=>flip.classList.add('revealed'),200));
+  if(flip) setTimeout(()=>flip.classList.add('revealed'),240);
 
   const rb=document.getElementById('resolveBox');
   if(effRoll){
@@ -1868,8 +1865,9 @@ function resetStage(){
       <button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw the first card</span></span></button>
       <div class="working" style="margin-top:16px">A fresh world · ${S.deck.length} cards in the deck</div>`;
   } else {
-    stage.innerHTML=`<button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>
-      <div class="working" style="margin-top:16px">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>`;
+    stage.innerHTML=`<div class="working">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b> · ${S.deck.length} cards</div>
+      <div class="draw-meta"></div>
+      <button class="deck-btn" id="deckBtn"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></button>`;
   }
   document.getElementById('deckBtn').onclick=drawCard;
 }
