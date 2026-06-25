@@ -1354,11 +1354,14 @@ function renderLog(){
   const list=document.getElementById('logList');
   if(!S.log.length){list.innerHTML='<div class="empty">The chronicle is empty. Draw a card to begin the world.</div>';return;}
   list.innerHTML=S.log.slice().reverse().map(e=>{
-    const notes=(e.notes||[]).map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
     const cxe=e.codexId && (S.codex||[]).find(x=>x.id===e.codexId);
+    // for codex-linked entries, derive the title/theme line live (so edits reflect) and drop the stale stored one
+    const noteLines=cxe ? (e.notes||[]).filter(n=>!/^(Lore|Event|Journal)\b/i.test(n)) : (e.notes||[]);
+    const notes=noteLines.map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
+    const live=cxe?`<div class="log-note" style="color:var(--gold)">${esc(cap1(cxe.type))}: ${esc(cxe.title)}${cxe.theme?(' ('+esc(cxe.theme)+')'):''}${cxe.outcome?(' — '+esc(cxe.outcome)):''}</div>`:'';
     const snip=cxe?`<div class="log-note" style="font-style:italic;color:var(--bone-dim);margin-top:5px">“${esc((cxe.body||'').replace(/\s+/g,' ').trim().slice(0,90))}${(cxe.body||'').length>90?'…':''}”</div>`:'';
     const read=cxe?`<button class="mini" data-cx="${e.codexId}" style="margin-top:7px">Read the writing ›</button>`:'';
-    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}${snip}${read}</div>`;
+    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${live}${notes}${snip}${read}</div>`;
   }).join('');
   list.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>openCodex(b.dataset.cx));
 }
@@ -1380,7 +1383,8 @@ function addCodexEntry(){
     delete e.theme; delete e.outcome; delete e.panel;
     if(kind==='lore'){ if(note)e.theme=note; if(panel)e.panel=panel; }
     else if(kind==='event'){ if(note)e.outcome=note; if(panel)e.panel=panel; }
-    cancelCodexEdit(); persist(); renderCodex(); flag('entry updated'); return;
+    const le=(S.log||[]).find(l=>l.codexId===editCodexId && l.manual); if(le) le.year=year;
+    cancelCodexEdit(); persist(); renderCodex(); renderLog(); flag('entry updated'); return;
   }
   const entry={ id:'cx'+uid(), ts:Date.now(), type:kind, year, body };
   if(kind==='lore'){
@@ -1391,9 +1395,10 @@ function addCodexEntry(){
   } else { if(!title) title='Year '+year; }
   entry.title=title;
   S.codex=S.codex||[]; S.codex.push(entry);
+  S.log=S.log||[]; S.log.push({ year:entry.year, card:'Written by hand', color:'', number:'', advanced:false, notes:[], codexId:entry.id, manual:true });
   setVal('alBody',''); setVal('alTitle',''); setVal('alTheme','');
-  persist(); renderCodex();
-  flag('added to the codex');
+  persist(); renderCodex(); renderLog();
+  flag('added · Lore page + Chronicle');
 }
 function editCodexEntry(id){
   const e=(S.codex||[]).find(x=>x.id===id); if(!e) return;
@@ -1415,8 +1420,9 @@ function deleteCodexEntry(id){
   const e=(S.codex||[]).find(x=>x.id===id); if(!e) return;
   if(!confirm('Delete this '+e.type+' entry? This cannot be undone.')) return;
   S.codex=(S.codex||[]).filter(x=>x.id!==id);
+  S.log=(S.log||[]).filter(l=>!(l.codexId===id && l.manual));   // remove the hand-written Chronicle line; draw entries stay
   if(editCodexId===id) cancelCodexEdit();
-  persist(); renderCodex();
+  persist(); renderCodex(); renderLog();
 }
 function renderCodex(){
   const fb=document.getElementById('loreFilters'); if(!fb) return;
