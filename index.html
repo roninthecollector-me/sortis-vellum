@@ -82,15 +82,18 @@
   .meta-chip.sectors .mv{color:var(--ember-soft)}
   .meta-chip .msub{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--ash-dim);margin-top:3px}
 
-  .card-face{width:300px;border-radius:8px;background:linear-gradient(135deg,#efe8d8,#e3d9c3);color:#15120d;
-    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;border:1px solid #c9bda1;margin-top:14px;animation:flip .4s ease}
+  /* skinnable card vars — a skin resets paper/edge/texture/ink; ink NUMBER (red/black) stays reserved below */
+  .card-face{--card-paper:linear-gradient(135deg,#efe8d8,#e3d9c3);--card-edge:#c9bda1;--card-texture:none;
+    --card-ink:#231d12;--card-ink2:#3a3122;--card-sub:#6a5f49;--card-rule:#cbbfa3;--seal-edge:#b7a988;
+    width:300px;border-radius:8px;background:var(--card-texture),var(--card-paper);color:#15120d;
+    box-shadow:0 16px 40px rgba(0,0,0,.55);padding:20px 20px 18px;position:relative;border:1px solid var(--card-edge);margin-top:14px;animation:flip .4s ease}
   @keyframes flip{from{opacity:0;transform:rotateY(26deg) translateY(8px)}to{opacity:1;transform:none}}
   .card-num{position:absolute;top:13px;right:17px;font-family:var(--display);font-size:38px;line-height:1;font-weight:600}
   .card-num.black{color:#15120d}.card-num.red{color:var(--ember)}
-  .card-seal{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6a5f49;border:1px solid #b7a988;border-radius:20px;padding:4px 10px;display:inline-block}
-  .card-title{font-family:var(--display);font-size:23px;margin:13px 0 7px;color:#231d12;padding-right:46px}
-  .card-instr{font-size:14px;color:#3a3122;line-height:1.55}
-  .card-dir{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#6a5f49;margin-top:14px;border-top:1px solid #cbbfa3;padding-top:9px}
+  .card-seal{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--card-sub);border:1px solid var(--seal-edge);border-radius:20px;padding:4px 10px;display:inline-block}
+  .card-title{font-family:var(--display);font-size:23px;margin:13px 0 7px;color:var(--card-ink);padding-right:46px}
+  .card-instr{font-size:14px;color:var(--card-ink2);line-height:1.55}
+  .card-dir{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--card-sub);margin-top:14px;border-top:1px solid var(--card-rule);padding-top:9px}
   .card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;width:300px;justify-content:center}
   .act{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;border-radius:4px;cursor:pointer;border:1px solid var(--line);background:var(--soil);color:var(--bone-dim)}
   .act:hover{background:var(--soil2);border-color:var(--ash-dim)}
@@ -120,6 +123,13 @@
   .card-face.tier-universal{border-color:#9a6fc4;background:linear-gradient(135deg,#ece6f2,#ddd2ea)}
   .card-face.volatile{animation:flip .4s ease, cardPulse 2.6s .5s ease-in-out infinite}
   @keyframes cardPulse{0%,100%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 18px rgba(168,111,208,.4)}50%{box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 40px rgba(168,111,208,.85)}}
+
+  /* ===== card skins (paper/edge/texture/ink only; rarity border+glow+seal still win) ===== */
+  body[data-skin="vellum"] .card-face{--card-paper:linear-gradient(135deg,#f7f2e6,#efe7d4);--card-edge:#dccfb5;--card-ink:#1c1812;--card-ink2:#2f281c;--card-sub:#766b53;--card-rule:#ddd2b8;--seal-edge:#cabd9d}
+  body[data-skin="foxed"] .card-face{--card-paper:linear-gradient(135deg,#e7d7b9,#d6c098);--card-edge:#b09a73;--card-ink:#2a2013;--card-ink2:#473722;--card-sub:#7c6a45;--card-rule:#c2ad84;--seal-edge:#b29a6e;
+    --card-texture:radial-gradient(circle at 18% 26%,rgba(120,86,44,.20) 0 5px,transparent 6px),radial-gradient(circle at 78% 62%,rgba(120,86,44,.15) 0 8px,transparent 9px),radial-gradient(circle at 52% 86%,rgba(120,86,44,.12) 0 4px,transparent 5px),radial-gradient(circle at 88% 18%,rgba(120,86,44,.10) 0 3px,transparent 4px)}
+  body[data-skin="cartographer"] .card-face{--card-paper:linear-gradient(135deg,#eef1ea,#e1e6db);--card-edge:#bcc3b2;--card-ink:#1f2a33;--card-ink2:#36424c;--card-sub:#5b6a5e;--card-rule:#c4ccbf;--seal-edge:#b6bfac;
+    --card-texture:repeating-linear-gradient(0deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px),repeating-linear-gradient(90deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px)}
 
   /* Capture */
   .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
@@ -631,6 +641,24 @@
           <option value="landscape">Landscape · 10×8 (wide)</option>
         </select></div>
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Sets the cell shape across the Map and panel templates.</div>
+      <div class="field" style="margin:14px 0 0"><label>Card skin</label>
+        <select id="setSkin">
+          <option value="almanac">Almanac · weathered parchment (default)</option>
+          <option value="vellum">Clean Vellum · smooth cream</option>
+          <option value="foxed">Foxed · heavily aged sepia</option>
+          <option value="cartographer">Cartographer · faint grid lines</option>
+        </select></div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:8px">Restyles the card paper. Red/black ink and rarity glow stay reserved.</div>
+      <div style="display:flex;justify-content:center;margin-top:16px">
+        <div class="card-face tier-common" style="margin-top:0;animation:none;cursor:default;pointer-events:none">
+          <div class="card-num black">3</div>
+          <span class="card-seal">Lore</span><span class="card-rarity">Common</span>
+          <div class="card-title">A Legend Is Told</div>
+          <div class="card-instr">A story takes root on this panel. Name the legend, choose its theme, and write the tale your people will remember.</div>
+          <div class="card-dir">3 steps · black · clockwise</div>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);text-align:center;margin-top:8px">Live preview — changes as you pick a skin.</div>
     </div>
 
     <h3 class="sec">Cloud sync</h3>
@@ -1012,8 +1040,11 @@ function renderHeader(){
   document.getElementById('hCur').textContent=S.currentPanel||'—';
   const sw=document.getElementById('setWorld'); if(sw && document.activeElement!==sw) sw.value=S.meta.world;
   const ss=document.getElementById('setShape'); if(ss) ss.value=(S.settings&&S.settings.panelShape)||'portrait';
+  const sk=document.getElementById('setSkin'); if(sk) sk.value=(S.settings&&S.settings.cardSkin)||'almanac';
+  applySkin();
   if(!current){ const ds=document.getElementById('drawStage'); if(ds && !ds.querySelector('.card-face')) resetStage(); }
 }
+function applySkin(){ const s=(S.settings&&S.settings.cardSkin)||'almanac'; if(s==='almanac') document.body.removeAttribute('data-skin'); else document.body.setAttribute('data-skin',s); }
 
 /* ===== ATLAS ===== */
 function addPanel(coord,terrain,year){
@@ -2069,6 +2100,7 @@ document.getElementById('addRule').onclick=()=>{const inp=document.getElementByI
 document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.getElementById('addRule').click();};
 document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
 document.getElementById('setShape').onchange=e=>{ S.settings=S.settings||{}; S.settings.panelShape=e.target.value; mapViewInit=false; persist(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); };
+document.getElementById('setSkin').onchange=e=>{ S.settings=S.settings||{}; S.settings.cardSkin=e.target.value; applySkin(); persist(); };
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
 function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
