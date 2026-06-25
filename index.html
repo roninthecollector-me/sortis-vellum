@@ -504,6 +504,23 @@
   <section class="view" id="v-lore">
     <div class="toolbar"><h2>Lore</h2><span class="pill" id="loreCount"></span></div>
     <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:600px;margin-top:-4px">The writing your world has gathered — lore, events, and journal entries you've authored. Click any piece to read it. (Still exports to Obsidian too, if you use it.)</p>
+
+    <h3 class="sec">Add an entry</h3>
+    <div class="form" style="max-width:560px">
+      <div class="split3">
+        <div class="field"><label>Kind</label><select id="alKind"><option value="lore">Lore</option><option value="event">Event</option><option value="journal">Journal</option></select></div>
+        <div class="field"><label>Year</label><input type="number" id="alYear" min="0"></div>
+        <div class="field"><label>Panel (optional)</label><input type="text" id="alPanel" placeholder="N0 E0"></div>
+      </div>
+      <div class="split2">
+        <div class="field"><label>Title (optional, auto-named)</label><input type="text" id="alTitle" placeholder="e.g. The Drowned King"></div>
+        <div class="field"><label>Theme / outcome (optional)</label><input type="text" id="alTheme" placeholder="History, betrayal…"></div>
+      </div>
+      <div class="field"><label>The writing</label><textarea id="alBody" placeholder="Set down the lore, the event, or the journal entry…"></textarea></div>
+      <button class="btn" id="alAdd" style="width:100%">Add to the codex</button>
+    </div>
+
+    <h3 class="sec">The codex</h3>
     <div class="filterbar" id="loreFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
     <div id="loreList"></div>
   </section>
@@ -1348,9 +1365,31 @@ function renderLog(){
 /* ===== LORE CODEX ===== */
 let codexFilter='all';
 const CODEX_GLYPH={lore:'❦',event:'※',journal:'✎'};
+function addCodexEntry(){
+  const body=val('alBody'); if(!body){ alert('Write something first.'); return; }
+  const kind=val('alKind')||'lore';
+  const year=Math.max(0,parseInt(val('alYear'))||S.meta.year);
+  let title=val('alTitle'); const note=val('alTheme'), panelRaw=val('alPanel');
+  let panel='', nospace='';
+  if(panelRaw && /[NS]\d+\s+[EW]\d+/.test(panelRaw)){ const pc=parseCoord(panelRaw), n=normCoord(pc.nm,pc.nd,pc.em,pc.ed); panel=n.pretty; nospace=n.nospace; }
+  const entry={ id:'cx'+uid(), ts:Date.now(), type:kind, year, body };
+  if(kind==='lore'){
+    if(!title){ const key='Yr'+year, seq=((S.loreSeq&&S.loreSeq[key])||0)+1; S.loreSeq=S.loreSeq||{}; S.loreSeq[key]=seq; title='Yr'+year+nospace+'-'+seq; }
+    if(note) entry.theme=note; if(panel) entry.panel=panel;
+  } else if(kind==='event'){
+    if(!title) title='An Event'; if(note) entry.outcome=note; if(panel) entry.panel=panel;
+  } else { if(!title) title='Year '+year; }
+  entry.title=title;
+  S.codex=S.codex||[]; S.codex.push(entry);
+  setVal('alBody',''); setVal('alTitle',''); setVal('alTheme','');
+  persist(); renderCodex();
+  flag('added to the codex');
+}
 function renderCodex(){
   const fb=document.getElementById('loreFilters'); if(!fb) return;
   const cx=S.codex||[];
+  const ay=document.getElementById('alYear'); if(ay && document.activeElement!==ay) ay.value=S.meta.year;
+  const ap=document.getElementById('alPanel'); if(ap && document.activeElement!==ap && !ap.value) ap.value=S.currentPanel||'';
   const cats=[['all','All'],['lore','Lore'],['event','Events'],['journal','Journals']];
   fb.innerHTML=cats.map(([k,l])=>`<button class="tag ${codexFilter===k?'gold':'cat'}" data-cf="${k}" style="cursor:pointer;background:none">${l}</button>`).join('');
   fb.querySelectorAll('[data-cf]').forEach(b=>b.onclick=()=>{codexFilter=b.dataset.cf;renderCodex();});
@@ -1379,6 +1418,7 @@ function openCodex(id){
 }
 function closeCodex(){ document.getElementById('cxr').classList.remove('show'); }
 function initCodex(){
+  document.getElementById('alAdd').onclick=addCodexEntry;
   document.getElementById('cxrClose').onclick=closeCodex;
   document.getElementById('cxr').onclick=e=>{ if(e.target.id==='cxr') closeCodex(); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('cxr').classList.contains('show')) closeCodex(); });
