@@ -505,7 +505,7 @@
     <div class="toolbar"><h2>Lore</h2><span class="pill" id="loreCount"></span></div>
     <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:600px;margin-top:-4px">The writing your world has gathered — lore, events, and journal entries you've authored. Click any piece to read it. (Still exports to Obsidian too, if you use it.)</p>
 
-    <h3 class="sec">Add an entry</h3>
+    <h3 class="sec" id="alFormTitle">Add an entry</h3>
     <div class="form" style="max-width:560px">
       <div class="split3">
         <div class="field"><label>Kind</label><select id="alKind"><option value="lore">Lore</option><option value="event">Event</option><option value="journal">Journal</option></select></div>
@@ -517,7 +517,7 @@
         <div class="field"><label>Theme / outcome (optional)</label><input type="text" id="alTheme" placeholder="History, betrayal…"></div>
       </div>
       <div class="field"><label>The writing</label><textarea id="alBody" placeholder="Set down the lore, the event, or the journal entry…"></textarea></div>
-      <button class="btn" id="alAdd" style="width:100%">Add to the codex</button>
+      <div style="display:flex;gap:10px"><button class="btn" id="alAdd" style="flex:1">Add to the codex</button><button class="btn ghost" id="alCancel" style="display:none">Cancel edit</button></div>
     </div>
 
     <h3 class="sec">The codex</h3>
@@ -1365,6 +1365,7 @@ function renderLog(){
 /* ===== LORE CODEX ===== */
 let codexFilter='all';
 const CODEX_GLYPH={lore:'❦',event:'※',journal:'✎'};
+let editCodexId=null;
 function addCodexEntry(){
   const body=val('alBody'); if(!body){ alert('Write something first.'); return; }
   const kind=val('alKind')||'lore';
@@ -1372,6 +1373,14 @@ function addCodexEntry(){
   let title=val('alTitle'); const note=val('alTheme'), panelRaw=val('alPanel');
   let panel='', nospace='';
   if(panelRaw && /[NS]\d+\s+[EW]\d+/.test(panelRaw)){ const pc=parseCoord(panelRaw), n=normCoord(pc.nm,pc.nd,pc.em,pc.ed); panel=n.pretty; nospace=n.nospace; }
+  if(editCodexId){
+    const e=(S.codex||[]).find(x=>x.id===editCodexId); if(!e){ cancelCodexEdit(); return; }
+    e.type=kind; e.year=year; e.body=body; e.title=title||e.title;
+    delete e.theme; delete e.outcome; delete e.panel;
+    if(kind==='lore'){ if(note)e.theme=note; if(panel)e.panel=panel; }
+    else if(kind==='event'){ if(note)e.outcome=note; if(panel)e.panel=panel; }
+    cancelCodexEdit(); persist(); renderCodex(); flag('entry updated'); return;
+  }
   const entry={ id:'cx'+uid(), ts:Date.now(), type:kind, year, body };
   if(kind==='lore'){
     if(!title){ const key='Yr'+year, seq=((S.loreSeq&&S.loreSeq[key])||0)+1; S.loreSeq=S.loreSeq||{}; S.loreSeq[key]=seq; title='Yr'+year+nospace+'-'+seq; }
@@ -1384,6 +1393,29 @@ function addCodexEntry(){
   setVal('alBody',''); setVal('alTitle',''); setVal('alTheme','');
   persist(); renderCodex();
   flag('added to the codex');
+}
+function editCodexEntry(id){
+  const e=(S.codex||[]).find(x=>x.id===id); if(!e) return;
+  editCodexId=id;
+  setVal('alKind',e.type); setVal('alYear',e.year); setVal('alPanel',e.panel||''); setVal('alTitle',e.title||''); setVal('alTheme',e.theme||e.outcome||''); setVal('alBody',e.body||'');
+  document.getElementById('alAdd').textContent='Save changes';
+  document.getElementById('alCancel').style.display='inline-block';
+  document.getElementById('alFormTitle').textContent='Edit entry';
+  document.getElementById('alFormTitle').scrollIntoView({block:'center'});
+}
+function cancelCodexEdit(){
+  editCodexId=null;
+  setVal('alBody',''); setVal('alTitle',''); setVal('alTheme','');
+  document.getElementById('alAdd').textContent='Add to the codex';
+  document.getElementById('alCancel').style.display='none';
+  document.getElementById('alFormTitle').textContent='Add an entry';
+}
+function deleteCodexEntry(id){
+  const e=(S.codex||[]).find(x=>x.id===id); if(!e) return;
+  if(!confirm('Delete this '+e.type+' entry? This cannot be undone.')) return;
+  S.codex=(S.codex||[]).filter(x=>x.id!==id);
+  if(editCodexId===id) cancelCodexEdit();
+  persist(); renderCodex();
 }
 function renderCodex(){
   const fb=document.getElementById('loreFilters'); if(!fb) return;
@@ -1402,9 +1434,11 @@ function renderCodex(){
     return `<div class="row" data-cx="${x.id}" style="cursor:pointer">
       <div class="rnum">${CODEX_GLYPH[x.type]||'❦'}</div>
       <div><div class="rtitle">${esc(x.title)}</div><div class="rmeta">${esc(meta)}</div><div class="rinstr">${esc(snip)}${(x.body||'').length>140?'…':''}</div></div>
-      <div class="rowacts"><span class="mini" style="pointer-events:none">Read ›</span></div></div>`;
+      <div class="rowacts"><button class="mini" data-edit="${x.id}">Edit</button><button class="mini danger" data-del="${x.id}">Delete</button></div></div>`;
   }).join('') : '<div class="empty">No writing yet. The lore, events, and journal entries you author will gather here.</div>';
   list.querySelectorAll('.row[data-cx]').forEach(el=>el.onclick=()=>openCodex(el.dataset.cx));
+  list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); editCodexEntry(b.dataset.edit); });
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); deleteCodexEntry(b.dataset.del); });
 }
 function openCodex(id){
   const x=(S.codex||[]).find(e=>e.id===id); if(!x) return;
@@ -1419,6 +1453,7 @@ function openCodex(id){
 function closeCodex(){ document.getElementById('cxr').classList.remove('show'); }
 function initCodex(){
   document.getElementById('alAdd').onclick=addCodexEntry;
+  document.getElementById('alCancel').onclick=cancelCodexEdit;
   document.getElementById('cxrClose').onclick=closeCodex;
   document.getElementById('cxr').onclick=e=>{ if(e.target.id==='cxr') closeCodex(); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('cxr').classList.contains('show')) closeCodex(); });
