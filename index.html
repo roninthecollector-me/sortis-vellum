@@ -136,6 +136,22 @@
   body[data-skin="cartographer"] .card-face{--card-paper:linear-gradient(135deg,#eef1ea,#e1e6db);--card-edge:#bcc3b2;--card-ink:#1f2a33;--card-ink2:#36424c;--card-sub:#5b6a5e;--card-rule:#c4ccbf;--seal-edge:#b6bfac;
     --card-texture:repeating-linear-gradient(0deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px),repeating-linear-gradient(90deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px)}
 
+  /* ===== 3D card flip (CSS only, no deps) — back shows, then flips to the drawn face ===== */
+  .flip3d{perspective:1500px;width:300px;margin:14px auto 0}
+  .flip3d-inner{position:relative;width:300px;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.2,.78,.22,1)}
+  .flip3d.revealed .flip3d-inner{transform:rotateY(180deg)}
+  .flip3d-front,.flip3d-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+  .flip3d-front{margin-top:0;animation:none;transform:rotateY(180deg)}   /* the 3D flip supplies the motion now */
+  .flip3d-front::before{animation-delay:.52s}                            /* hold the glow flare until the face turns toward us */
+  .flip3d-back{position:absolute;inset:0;transform:rotateY(0deg)}
+  .card-back{position:absolute;inset:0;border-radius:8px;border:1px solid #b39b6f;box-shadow:0 16px 40px rgba(0,0,0,.55);
+    background:linear-gradient(135deg,#d9c9a6,#c6b083);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .cb-frame{position:absolute;inset:13px;border:1px solid rgba(92,72,42,.55);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+    background:repeating-linear-gradient(45deg,rgba(120,95,55,.06) 0 7px,transparent 7px 14px)}
+  .cb-mark{font-family:var(--display);font-size:50px;line-height:1;color:#5a4a2c;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+  .cb-name{font-family:var(--display);font-size:19px;letter-spacing:.5px;color:#3a2f15}
+  .cb-sub{font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#6a5836}
+
   /* Capture */
   .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
   .capture h4{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin:0 0 12px;display:flex;align-items:center;gap:8px}
@@ -1591,18 +1607,29 @@ function showCard(c){
   stage.innerHTML=`
     <div class="working">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b></div>
     <div class="draw-meta">${travelHtml}${sectorHtml}</div>
-    <div class="card-face tier-${dt}${c.volatile?' volatile':''}">
-      <div class="card-num ${c.color}">${c.number}</div>
-      <span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span>
-      <div class="card-title">${esc(c.title)}</div>
-      <div class="card-instr">${esc(c.instruction)}</div>
-      <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
+    <div class="flip3d" id="flipCard">
+      <div class="flip3d-inner">
+        <div class="flip3d-back"><div class="card-back"><div class="cb-frame">
+          <div class="cb-mark">✚</div><div class="cb-name">The Sortis Vellum</div><div class="cb-sub">Draw</div>
+        </div></div></div>
+        <div class="card-face flip3d-front tier-${dt}${c.volatile?' volatile':''}">
+          <div class="card-num ${c.color}">${c.number}</div>
+          <span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span>
+          <div class="card-title">${esc(c.title)}</div>
+          <div class="card-instr">${esc(c.instruction)}</div>
+          <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
+        </div>
+      </div>
     </div>
     <div class="card-actions">${extras}
       <button class="act done" id="aDone">Complete & log</button>
       <button class="act" id="aRedraw">Draw again</button></div>
     <div class="resolve" id="resolveBox"></div>
     <div class="capture">${capInner}</div>`;
+
+  // show the card back, then flip it over to reveal the drawn face
+  const flip=document.getElementById('flipCard');
+  if(flip) requestAnimationFrame(()=>setTimeout(()=>flip.classList.add('revealed'),200));
 
   const rb=document.getElementById('resolveBox');
   if(effRoll){
