@@ -251,6 +251,19 @@
   .onb-cancel{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:#8a7c5e;background:none;border:none;cursor:pointer}
   .onb-cancel:hover{color:#7a3320}
 
+  /* Lore codex reader */
+  .cxr{display:none;position:fixed;inset:0;z-index:60;background:rgba(8,7,5,.82);align-items:center;justify-content:center;padding:24px}
+  .cxr.show{display:flex}
+  .cxr-card{position:relative;width:560px;max-width:100%;max-height:88vh;overflow:auto;background:linear-gradient(150deg,#efe8d8,#e6dcc6);border:1px solid #c9bda1;border-radius:11px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:26px 30px;animation:flip .35s ease}
+  .cxr-kind{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#9c7a1e}
+  .cxr-title{font-family:var(--display);font-size:24px;color:#231d12;margin:3px 0 4px;padding-right:24px}
+  .cxr-meta{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:#8a7c5e;margin-bottom:14px;text-transform:uppercase}
+  .cxr-body{font-family:var(--display);font-size:15px;line-height:1.7;color:#33291c;white-space:pre-wrap}
+  .cxr-tools{display:flex;gap:8px;margin-top:18px}
+  .cxr-tools .mini{border-color:#cbbfa3;color:#8a7c5e}.cxr-tools .mini:hover{color:#7a3320;border-color:#b88a2e}
+  .cxr-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:16px;color:#8a7c5e;cursor:pointer}
+  .cxr-close:hover{color:#7a3320}
+
   /* Atlas — panel image chips */
   .pimg{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:6px}
   .gchip{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid var(--verd-deep);color:var(--verd);display:inline-flex;align-items:center;gap:5px}
@@ -338,6 +351,7 @@
     <button class="tab" data-view="forge">Forge a Card</button>
     <button class="tab" data-view="archive">Retired</button>
     <button class="tab" data-view="chron">Chronicle</button>
+    <button class="tab" data-view="lore">Lore</button>
     <button class="tab" data-view="worldrules">World Rules</button>
     <button class="tab" data-view="dice">Dice</button>
     <button class="tab" data-view="rules">How To</button>
@@ -485,6 +499,13 @@
   <section class="view" id="v-chron">
     <div class="toolbar"><h2>Chronicle</h2><button class="mini danger" id="clearLog">Clear log</button></div>
     <div id="logList"></div>
+  </section>
+
+  <section class="view" id="v-lore">
+    <div class="toolbar"><h2>Lore</h2><span class="pill" id="loreCount"></span></div>
+    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:600px;margin-top:-4px">The writing your world has gathered — lore, events, and journal entries you've authored. Click any piece to read it. (Still exports to Obsidian too, if you use it.)</p>
+    <div class="filterbar" id="loreFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <div id="loreList"></div>
   </section>
 
   <section class="view" id="v-worldrules">
@@ -668,6 +689,16 @@
     </div>
   </div>
 </div>
+<div class="cxr" id="cxr">
+  <div class="cxr-card">
+    <button class="cxr-close" id="cxrClose" title="Close">✕</button>
+    <div class="cxr-kind" id="cxrKind"></div>
+    <div class="cxr-title" id="cxrTitle"></div>
+    <div class="cxr-meta" id="cxrMeta"></div>
+    <div class="cxr-body" id="cxrBody"></div>
+    <div class="cxr-tools"><button class="mini" id="cxrCopy">Copy text</button></div>
+  </div>
+</div>
 <canvas id="panelCv" width="2400" height="3000"></canvas>
 
 <script>
@@ -818,7 +849,7 @@ async function boot(){
   let firstRun=false;
   if(saved && saved.deck){ S=saved; }
   else { firstRun=true; }   // brand-new visitor → onboarding decides the deck/shape/name
-  S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
+  S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.codex=S.codex||[]; S.meta=S.meta||{world:'The Sortis Vellum',year:0,draws:0};
   S.panels.forEach(p=>{ p.images=p.images||{}; });
   migrateCards();
   pickQuote();
@@ -865,7 +896,7 @@ async function pullCloud(){
   try{
     const { data, error } = await sb.from('worlds').select('data').eq('user_id', sbUser.id).maybeSingle();
     if(error) throw error;
-    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.panels.forEach(p=>{ p.images=p.images||{}; }); migrateCards(); await Store.save(S); pickQuote(); renderAll(); closeOnboard(); flag('synced from cloud'); }
+    if(data && data.data){ S = data.data; S.settings=S.settings||{travelOdds:50}; S.panels=S.panels||[]; S.places=S.places||[]; S.heroes=S.heroes||[]; S.rules=S.rules||[]; S.loreSeq=S.loreSeq||{}; S.codex=S.codex||[]; S.panels.forEach(p=>{ p.images=p.images||{}; }); migrateCards(); await Store.save(S); pickQuote(); renderAll(); closeOnboard(); flag('synced from cloud'); }
     else { await pushCloud(); } // first sign-in: seed the cloud from this device
   }catch(e){ console.warn('cloud pull failed', e); }
 }
@@ -945,7 +976,7 @@ function normCoord(nm,nd,em,ed){ if(nm===0)nd='N'; if(em===0)ed='E'; const prett
 function capCoord(){ return normCoord(Math.max(0,parseInt(val('capNsMag'))||0),val('capNsDir')||'N',Math.max(0,parseInt(val('capEwMag'))||0),val('capEwDir')||'E'); }
 
 /* ===== render shell ===== */
-function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderWorldRules();renderObsidian();}
+function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderCodex();renderWorldRules();renderObsidian();}
 function renderWorldRules(){
   const list=document.getElementById('ruleList'); if(!list) return;
   document.getElementById('ruleCount').textContent = S.rules.length? (S.rules.length+(S.rules.length===1?' rule':' rules')) : 'empty';
@@ -1307,8 +1338,50 @@ function renderLog(){
   if(!S.log.length){list.innerHTML='<div class="empty">The chronicle is empty. Draw a card to begin the world.</div>';return;}
   list.innerHTML=S.log.slice().reverse().map(e=>{
     const notes=(e.notes||[]).map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
-    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}</div>`;
+    const has=e.codexId && (S.codex||[]).some(x=>x.id===e.codexId);
+    const read=has?`<button class="mini" data-cx="${e.codexId}" style="margin-top:7px">Read the writing ›</button>`:'';
+    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}${read}</div>`;
   }).join('');
+  list.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>openCodex(b.dataset.cx));
+}
+
+/* ===== LORE CODEX ===== */
+let codexFilter='all';
+const CODEX_GLYPH={lore:'❦',event:'※',journal:'✎'};
+function renderCodex(){
+  const fb=document.getElementById('loreFilters'); if(!fb) return;
+  const cx=S.codex||[];
+  const cats=[['all','All'],['lore','Lore'],['event','Events'],['journal','Journals']];
+  fb.innerHTML=cats.map(([k,l])=>`<button class="tag ${codexFilter===k?'gold':'cat'}" data-cf="${k}" style="cursor:pointer;background:none">${l}</button>`).join('');
+  fb.querySelectorAll('[data-cf]').forEach(b=>b.onclick=()=>{codexFilter=b.dataset.cf;renderCodex();});
+  document.getElementById('loreCount').textContent=cx.length?(cx.length+(cx.length===1?' entry':' entries')):'empty';
+  const list=document.getElementById('loreList');
+  const items=cx.filter(x=>codexFilter==='all'||x.type===codexFilter).slice().reverse();
+  list.innerHTML=items.length?items.map(x=>{
+    const meta=[cap1(x.type),x.theme,x.panel,'Yr '+x.year].filter(Boolean).join(' · ');
+    const snip=(x.body||'').replace(/\s+/g,' ').trim().slice(0,140);
+    return `<div class="row" data-cx="${x.id}" style="cursor:pointer">
+      <div class="rnum">${CODEX_GLYPH[x.type]||'❦'}</div>
+      <div><div class="rtitle">${esc(x.title)}</div><div class="rmeta">${esc(meta)}</div><div class="rinstr">${esc(snip)}${(x.body||'').length>140?'…':''}</div></div>
+      <div class="rowacts"><span class="mini" style="pointer-events:none">Read ›</span></div></div>`;
+  }).join('') : '<div class="empty">No writing yet. The lore, events, and journal entries you author will gather here.</div>';
+  list.querySelectorAll('.row[data-cx]').forEach(el=>el.onclick=()=>openCodex(el.dataset.cx));
+}
+function openCodex(id){
+  const x=(S.codex||[]).find(e=>e.id===id); if(!x) return;
+  document.getElementById('cxrKind').textContent=x.type;
+  document.getElementById('cxrTitle').textContent=x.title;
+  const meta=[x.theme,x.panel,'Year '+x.year,x.outcome,(x.heroes&&x.heroes.length?('Heroes: '+x.heroes.join(', ')):'')].filter(Boolean).join(' · ');
+  document.getElementById('cxrMeta').textContent=meta;
+  document.getElementById('cxrBody').textContent=(x.body||'').trim()||'(no text was written)';
+  document.getElementById('cxr').classList.add('show');
+  document.getElementById('cxrCopy').onclick=()=>{ const t=x.title+'\n\n'+(x.body||''); if(navigator.clipboard) navigator.clipboard.writeText(t).catch(()=>{}); document.getElementById('cxrCopy').textContent='Copied'; setTimeout(()=>{document.getElementById('cxrCopy').textContent='Copy text';},1200); };
+}
+function closeCodex(){ document.getElementById('cxr').classList.remove('show'); }
+function initCodex(){
+  document.getElementById('cxrClose').onclick=closeCodex;
+  document.getElementById('cxr').onclick=e=>{ if(e.target.id==='cxr') closeCodex(); };
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('cxr').classList.contains('show')) closeCodex(); });
 }
 
 /* ===== DRAW ===== */
@@ -1522,7 +1595,7 @@ function renderCaptureFields(type){
     html = setts.length? `<div class="cap-row"><label>Settlement to grow</label><select id="capGrow">`+setts.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} · ${p.tier} → ${nextTier(p.tier)[0]}</option>`).join('')+`</select></div>` : `<div class="cap-row" style="font-family:var(--mono);font-size:11px;color:var(--ash-dim)">No settlements that can grow yet.</div>`;
   }
   else if(type==='hero'){const a=current&&current.lastRoll?current.lastRoll.value:'';html=txtRow('capName','Name','e.g. Vaelin Cross')+`<div class="cap-row"><label>Alignment (1 villain – 10 paragon)</label><input type="number" id="capAlign" min="1" max="10" value="${a}"></div>`+coordWidget();}
-  else if(type==='lore'){html=selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget();}
+  else if(type==='lore'){html=selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget()+`<div class="cap-row"><label>The lore — write it here to keep it in your world (and your vault)</label><textarea id="capLoreBody" placeholder="The story the tome tells…"></textarea></div>`;}
   else if(type==='rule'){html=`<div class="cap-row"><label>The new rule</label><input type="text" id="capRule" placeholder="e.g. The year turns in three seasons."></div><div class="cap-row"><label>Elaboration (optional)</label><textarea id="capRuleBody" placeholder="How it works, what it means for the world…"></textarea></div>`;}
   else if(type==='event'){const o=current&&current.lastRoll?current.lastRoll.read:'';html=txtRow('capTitle','Event title','e.g. The Ashfall Reckoning')+coordWidget()+txtRow('capHeroes','Heroes involved (comma-separated, optional)','Vaelin Cross, Mara')+`<div class="cap-row"><label>What took place</label><input type="text" id="capOutcome" value="${o}" placeholder="A one-line summary"></div><div class="cap-row"><label>Detailed account</label><textarea id="capDetail" placeholder="The full account, as the explorer records it…"></textarea></div>`;}
   else if(type==='journal'){html=`<div class="cap-row"><label>Entry</label><textarea id="capBody" placeholder="The state of the world, as an observer…"></textarea></div>`;}
@@ -1551,15 +1624,15 @@ function buildNote(type){
     const title=text.replace(/[.?!]+$/,'').slice(0,48);
     const md=['---','type: rule','established: '+y2,'tags: [world-rule, year/'+y2+']','---','# '+title,'> A law of the world · established **Year '+y2+'**','',text].concat(body?['',body]:[]).concat(['']).join('\n');
     return {title,md,summary:'World rule: '+text,commit:{kind:'rule',text}};}
-  if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title='Yr'+y+co.nospace+'-'+seq;
-    const md=['---','type: lore','theme: '+theme,'year: '+y,'panel: "'+co.link+'"','tags: [lore, year/'+y+']','---','# '+title+' — '+theme,'> Discovered **Year '+y+'** on '+co.link,'','*(the story the tome tells)*',''].join('\n');
-    return {title,md,summary:'Lore '+title+' ('+theme+')',seqKey:key};}
-  if(type==='event'){const co=capCoord(),t=val('capTitle')||'An Event',outcome=val('capOutcome')||'';const detail=val('capDetail')||'*(what happened)*';const heroes=val('capHeroes').split(',').map(s=>s.trim()).filter(Boolean);const hL=heroes.map(h=>'[['+h+']]');
+  if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const body=val('capLoreBody')||'';const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title='Yr'+y+co.nospace+'-'+seq;
+    const md=['---','type: lore','theme: '+theme,'year: '+y,'panel: "'+co.link+'"','tags: [lore, year/'+y+']','---','# '+title+' — '+theme,'> Discovered **Year '+y+'** on '+co.link,'',body||'*(the story the tome tells)*',''].join('\n');
+    return {title,md,summary:'Lore '+title+' ('+theme+')',seqKey:key,codex:{type:'lore',title,year:y,panel:co.pretty,theme,body}};}
+  if(type==='event'){const co=capCoord(),t=val('capTitle')||'An Event',outcome=val('capOutcome')||'';const rawDetail=val('capDetail');const detail=rawDetail||'*(what happened)*';const heroes=val('capHeroes').split(',').map(s=>s.trim()).filter(Boolean);const hL=heroes.map(h=>'[['+h+']]');
     const lines=['---','type: event','year: '+y,'panel: "'+co.link+'"'].concat(heroes.length?['heroes: ['+hL.map(h=>'"'+h+'"').join(', ')+']']:[]).concat(['tags: [event, year/'+y+']','---','# '+t,'> Year '+y+' · '+co.link+(outcome?' · '+outcome:'')]);
     if(heroes.length) lines.push('> Resolved by: '+hL.join(', '));
     lines.push('',detail,'');
-    return {title:t,md:lines.join('\n'),summary:'Event “'+t+'” on '+co.pretty+(outcome?' — '+outcome:'')};}
-  if(type==='journal'){const body=val('capBody')||'*(…)*';return {title:'Year '+y,md:['### Year '+y,'',body,''].join('\n'),summary:'Journal entry (Year '+y+')',append:true};}
+    return {title:t,md:lines.join('\n'),summary:'Event “'+t+'” on '+co.pretty+(outcome?' — '+outcome:''),codex:{type:'event',title:t,year:y,panel:co.pretty,outcome,heroes,body:rawDetail}};}
+  if(type==='journal'){const body=val('capBody')||'';return {title:'Year '+y,md:['### Year '+y,'',body||'*(…)*',''].join('\n'),summary:'Journal entry (Year '+y+')',append:true,codex:{type:'journal',title:'Year '+y,year:y,body}};}
   return null;
 }
 function doBuildNote(){
@@ -1590,15 +1663,17 @@ function completeDraw(){
   if(current.madeCard){current.notes.unshift('New law forged: “'+current.madeCard+'”');}
   if(!current.pendingCapture && !c.make){ const auto=autoCapture(); if(auto) current.pendingCapture=auto; }
   const cap=current.pendingCapture;
+  let codexId=null;
   if(cap){
     current.notes.unshift(cap.summary);
     if(cap.seqKey){S.loreSeq=S.loreSeq||{};S.loreSeq[cap.seqKey]=((S.loreSeq[cap.seqKey])||0)+1;}
     commitToWorld(cap.commit);
+    if(cap.codex && (cap.codex.body||'').trim()){ codexId='cx'+uid(); S.codex=S.codex||[]; S.codex.push(Object.assign({id:codexId,ts:Date.now()},cap.codex)); }
   }
   if(c.volatile){ resolveVolatile(c); }   // Universal cards meet their 60/40 fate after you've used them
-  S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes});
+  S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes,codexId});
   current=null;
-  persist();renderHeader();renderAtlas();renderLog();renderDeck();renderArchive();
+  persist();renderHeader();renderAtlas();renderLog();renderCodex();renderDeck();renderArchive();
   resetStage();
 }
 function resolveVolatile(c){
@@ -1734,12 +1809,27 @@ function vaultWorldMOC(){
     .concat(['','### Places']).concat(list(S.places,pl=>'- [['+pl.name+']]'));
   return {path:'World.md', md:L.join('\n')};
 }
+function vaultCodexNotes(){
+  return (S.codex||[]).filter(x=>(x.body||'').trim()).map(x=>{
+    const folder={lore:'Lore',event:'Events',journal:'Journals'}[x.type]||'Lore';
+    const fm=['---','type: '+x.type,'year: '+x.year];
+    if(x.panel) fm.push('panel: "[['+x.panel+']]"');
+    if(x.theme) fm.push('theme: '+x.theme);
+    if(x.heroes&&x.heroes.length) fm.push('heroes: ['+x.heroes.map(h=>'"'+h+'"').join(', ')+']');
+    fm.push('tags: ['+x.type+', year/'+x.year+']','---','# '+x.title);
+    if(x.outcome) fm.push('> '+x.outcome);
+    fm.push('', x.body||'', '');
+    const fname = x.type==='lore' ? safeName(x.title) : safeName(x.title)+' '+(x.id||'').slice(-4);
+    return {path:folder+'/'+fname+'.md', md:fm.join('\n')};
+  });
+}
 function buildVaultTextFiles(){
   const f=[];
   S.panels.forEach(p=>f.push(vaultPanelNote(p)));
   S.heroes.forEach(h=>f.push(vaultHeroNote(h)));
   S.places.forEach(pl=>f.push(vaultPlaceNote(pl)));
   vaultRuleNotes().forEach(n=>f.push(n));
+  vaultCodexNotes().forEach(n=>f.push(n));
   f.push(vaultChronicle()); f.push(vaultWorldMOC());
   return f;
 }
@@ -1895,12 +1985,13 @@ document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.get
 document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
 document.getElementById('setShape').onchange=e=>{ S.settings=S.settings||{}; S.settings.panelShape=e.target.value; mapViewInit=false; persist(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); };
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
-function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();}
+function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 
 resetStage();
 initMapUI();
 initObsidianUI();
+initCodex();
 wireOnboard();
 boot();
 </script>
