@@ -222,7 +222,7 @@
   .dice3d-lab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash)}
   #dice3dType{width:auto;min-width:90px}
   .dice3d-out{font-family:var(--display);font-size:30px;color:var(--gold);min-width:42px;text-align:center}
-  .dice3d-stage{position:relative;width:100%;height:340px;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:grab;
+  .dice3d-stage{position:relative;width:100%;height:420px;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:grab;
     background:radial-gradient(120% 120% at 50% 0%,#22201a 0%,#161410 70%,#100f0c 100%);touch-action:none}
   .dice3d-stage.grabbing{cursor:grabbing}
   .dice3d-stage canvas{display:block;width:100%;height:100%}
@@ -2123,7 +2123,7 @@ const Dice3D=(()=>{
   let loading=null, ready=false, failed=false;
   let TH, CN, renderer, scene, camera, world, dieMesh, dieBody;
   const faceTex=[], faceCtx=[], faceVal=[];
-  const HS=0.62, TRAY=3.0, UPN=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  const HS=0.56, TRAY=4.3, UPN=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
   let curN=6, result=1, rolling=false, grabbing=false, lowT=0, failT=0, pending=0, dragPlane, ray, ptr, lastP=null, lastT=0, vel;
   const $=id=>document.getElementById(id);
   const stage=()=>$('dice3dStage');
@@ -2156,7 +2156,7 @@ const Dice3D=(()=>{
   function build(){
     const st=stage(), W=st.clientWidth, H=st.clientHeight;
     renderer=new TH.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.setSize(W,H); st.appendChild(renderer.domElement);
-    scene=new TH.Scene(); camera=new TH.PerspectiveCamera(42,W/H,0.1,100); camera.position.set(0,8.4,5.2); camera.lookAt(0,0,0);
+    scene=new TH.Scene(); camera=new TH.PerspectiveCamera(42,W/H,0.1,100); camera.position.set(0,11.8,7.2); camera.lookAt(0,0,0);
     scene.add(new TH.AmbientLight(0xffffff,0.8));
     const key=new TH.DirectionalLight(0xfff0d2,0.95); key.position.set(4,9,5); scene.add(key);
     const rim=new TH.DirectionalLight(0xc9a24b,0.45); rim.position.set(-5,4,-3); scene.add(rim);
@@ -2184,7 +2184,7 @@ const Dice3D=(()=>{
       dieBody.type=CN.Body.KINEMATIC; dieBody.allowSleep=false; dieBody.wakeUp&&dieBody.wakeUp(); dieBody.velocity.set(0,0,0); dieBody.angularVelocity.set(0,0,0);
       lastP=planePt(e)||new TH.Vector3(0,0,0); lastT=performance.now(); vel.set(0,0,0); });
     st.addEventListener('pointermove',e=>{ if(!grabbing) return; const p=planePt(e); if(!p) return; const now=performance.now(), dt=Math.max(16,now-lastT)/1000;
-      vel.set((p.x-lastP.x)/dt,0,(p.z-lastP.z)/dt); dieBody.position.set(p.x,HS+0.4,p.z); dieBody.angularVelocity.set((Math.random()-.5)*6,(Math.random()-.5)*6,(Math.random()-.5)*6); lastP=p; lastT=now; });
+      vel.set((p.x-lastP.x)/dt,0,(p.z-lastP.z)/dt); dieBody.position.set(p.x+(Math.random()-.5)*0.07,HS+0.4+(Math.random()-.5)*0.05,p.z+(Math.random()-.5)*0.07); dieBody.angularVelocity.set((Math.random()-.5)*15,(Math.random()-.5)*15,(Math.random()-.5)*15); lastP=p; lastT=now; });
     const release=e=>{ if(!grabbing) return; grabbing=false; stage().classList.remove('grabbing'); dieBody.type=CN.Body.DYNAMIC; dieBody.allowSleep=true; dieBody.wakeUp&&dieBody.wakeUp();
       const sp=Math.hypot(vel.x,vel.z); begin(curN); dieBody.velocity.set(vel.x*1.15, 2.2+Math.random()*1.6, vel.z*1.15);
       const k=sp<1?14:20; dieBody.angularVelocity.set((Math.random()-.5)*k,(Math.random()-.5)*k,(Math.random()-.5)*k); };
