@@ -216,6 +216,19 @@
   .die:hover{background:rgba(111,139,120,.14)}
   .die-out{font-family:var(--display);font-size:28px;color:var(--gold);min-width:42px;text-align:center}
   .die-ctx{font-family:var(--mono);font-size:11px;color:var(--ash)}
+  /* ===== 3D dice tray ===== */
+  .dice3d-wrap{margin-top:22px;max-width:560px}
+  .dice3d-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .dice3d-lab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash)}
+  #dice3dType{width:auto;min-width:90px}
+  .dice3d-out{font-family:var(--display);font-size:30px;color:var(--gold);min-width:42px;text-align:center}
+  .dice3d-stage{position:relative;width:100%;height:340px;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:grab;
+    background:radial-gradient(120% 120% at 50% 0%,#22201a 0%,#161410 70%,#100f0c 100%);touch-action:none}
+  .dice3d-stage.grabbing{cursor:grabbing}
+  .dice3d-stage canvas{display:block;width:100%;height:100%}
+  .dice3d-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+    font-family:var(--mono);font-size:11px;letter-spacing:1px;line-height:1.7;color:var(--ash-dim)}
+  .dice3d-hint{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--ash-dim);margin-top:9px;line-height:1.6}
 
   .rules{max-width:680px}
   .rules p{font-size:14px;line-height:1.6;color:var(--bone-dim)}
@@ -560,6 +573,20 @@
       <button class="die" data-d="4">d4</button><button class="die" data-d="6">d6</button><button class="die" data-d="8">d8</button>
       <button class="die" data-d="10">d10</button><button class="die" data-d="12">d12</button><button class="die" data-d="20">d20</button><button class="die" data-d="100">d100</button>
       <span class="die-out" id="diceOut">—</span><span class="die-ctx" id="diceCtx"></span>
+    </div>
+
+    <div class="dice3d-wrap" id="dice3dWrap">
+      <div class="dice3d-bar">
+        <span class="dice3d-lab">Throw a</span>
+        <select id="dice3dType">
+          <option value="4">d4</option><option value="6" selected>d6</option><option value="8">d8</option>
+          <option value="10">d10</option><option value="12">d12</option><option value="20">d20</option><option value="100">d100</option>
+        </select>
+        <button class="btn ghost" id="dice3dRoll" style="padding:8px 16px">Roll</button>
+        <span class="dice3d-out" id="dice3dOut">—</span><span class="die-ctx" id="dice3dCtx"></span>
+      </div>
+      <div class="dice3d-stage" id="dice3dStage"><div class="dice3d-msg" id="dice3dMsg">Click to wake the dice tray…</div></div>
+      <div class="dice3d-hint">Grab the die and fling it, or press <b>Roll</b>. The number it settles on is your roll. (Falls back to the buttons above if 3D isn't available.)</div>
     </div>
   </section>
 
@@ -2090,6 +2117,107 @@ async function renderObsidian(){
 
 /* ===== dice / log / export / tabs ===== */
 document.querySelectorAll('.die').forEach(b=>b.onclick=()=>{const m=+b.dataset.d,v=1+Math.floor(Math.random()*m);document.getElementById('diceOut').textContent=v;document.getElementById('diceCtx').textContent=m===10?(v<=3?'villain':(v>=8?'paragon':'unproven')):'';});
+
+/* ===== 3D dice tray — Three.js + cannon, lazy-loaded from CDN, degrades to the buttons above ===== */
+const Dice3D=(()=>{
+  let loading=null, ready=false, failed=false;
+  let TH, CN, renderer, scene, camera, world, dieMesh, dieBody;
+  const faceTex=[], faceCtx=[], faceVal=[];
+  const HS=0.62, TRAY=3.0, UPN=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  let curN=6, result=1, rolling=false, grabbing=false, lowT=0, failT=0, pending=0, dragPlane, ray, ptr, lastP=null, lastT=0, vel;
+  const $=id=>document.getElementById(id);
+  const stage=()=>$('dice3dStage');
+  const msg=t=>{const m=$('dice3dMsg'); if(m){ m.style.display=(t===null)?'none':'flex'; if(t!==null)m.textContent=t; }};
+
+  function inject(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s);});}
+  function load(){ if(loading) return loading; loading=(async()=>{
+    await inject('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js');
+    await inject('https://cdn.jsdelivr.net/npm/cannon@0.6.2/build/cannon.min.js');
+    if(!window.THREE||!window.CANNON) throw new Error('3d libs missing'); TH=window.THREE; CN=window.CANNON;
+  })(); return loading; }
+
+  function init(){
+    if(ready||failed) return;
+    const st=stage(); if(!st||!st.clientWidth){ return; } // wait until the tab is visible/sized
+    msg('Loading the dice…');
+    load().then(()=>{ try{ build(); ready=true; msg(null); if(pending){ const n=pending; pending=0; roll(n); } }
+      catch(e){ console.warn('dice3d build failed',e); failed=true; msg('3D dice need WebGL — the buttons above still work.'); } })
+      .catch(e=>{ console.warn('dice3d load failed',e); failed=true; msg('Couldn’t reach the 3D dice — the buttons above still work.'); });
+  }
+
+  function mkFace(){const c=document.createElement('canvas');c.width=c.height=256;return c;}
+  function drawFace(i,n,hot){ const c=faceCtx[i]; c.clearRect(0,0,256,256);
+    const g=c.createLinearGradient(0,0,256,256); g.addColorStop(0,'#efe7d2'); g.addColorStop(1,'#dccdab'); c.fillStyle=g; c.fillRect(0,0,256,256);
+    c.strokeStyle=hot?'rgba(176,138,40,.9)':'rgba(120,100,60,.45)'; c.lineWidth=hot?14:9; c.strokeRect(10,10,236,236);
+    c.fillStyle='#1b150c'; c.font='bold 150px Georgia, serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(n),128,142);
+    faceTex[i].needsUpdate=true; }
+  function paintAll(n){ for(let i=0;i<6;i++){ faceVal[i]=1+Math.floor(Math.random()*n); drawFace(i,faceVal[i],false); } }
+
+  function build(){
+    const st=stage(), W=st.clientWidth, H=st.clientHeight;
+    renderer=new TH.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.setSize(W,H); st.appendChild(renderer.domElement);
+    scene=new TH.Scene(); camera=new TH.PerspectiveCamera(42,W/H,0.1,100); camera.position.set(0,8.4,5.2); camera.lookAt(0,0,0);
+    scene.add(new TH.AmbientLight(0xffffff,0.8));
+    const key=new TH.DirectionalLight(0xfff0d2,0.95); key.position.set(4,9,5); scene.add(key);
+    const rim=new TH.DirectionalLight(0xc9a24b,0.45); rim.position.set(-5,4,-3); scene.add(rim);
+    world=new CN.World(); world.gravity.set(0,-24,0); world.allowSleep=true;
+    if(world.defaultContactMaterial){ world.defaultContactMaterial.friction=0.4; world.defaultContactMaterial.restitution=0.3; }
+    const add=b=> world.addBody?world.addBody(b):world.add(b);
+    const floor=new CN.Body({mass:0}); floor.addShape(new CN.Plane()); floor.quaternion.setFromAxisAngle(new CN.Vec3(1,0,0),-Math.PI/2); add(floor);
+    [[0,-TRAY,0],[0,TRAY,Math.PI],[-TRAY,0,Math.PI/2],[TRAY,0,-Math.PI/2]].forEach(([x,z,ry])=>{ const w=new CN.Body({mass:0}); w.addShape(new CN.Plane()); w.position.set(x,0,z); w.quaternion.setFromAxisAngle(new CN.Vec3(0,1,0),ry); add(w); });
+    const fm=new TH.Mesh(new TH.PlaneGeometry(TRAY*2,TRAY*2), new TH.MeshStandardMaterial({color:0x16140f,roughness:1})); fm.rotation.x=-Math.PI/2; scene.add(fm);
+    const mats=[]; for(let i=0;i<6;i++){ const cv=mkFace(); faceCtx[i]=cv.getContext('2d'); faceTex[i]=new TH.CanvasTexture(cv); mats.push(new TH.MeshStandardMaterial({map:faceTex[i],roughness:.55,metalness:.04})); }
+    paintAll(curN);
+    dieMesh=new TH.Mesh(new TH.BoxGeometry(HS*2,HS*2,HS*2),mats); scene.add(dieMesh);
+    dieBody=new CN.Body({mass:1}); dieBody.addShape(new CN.Box(new CN.Vec3(HS,HS,HS))); dieBody.position.set(0,HS,0);
+    dieBody.allowSleep=true; dieBody.sleepSpeedLimit=0.18; dieBody.sleepTimeLimit=0.4; add(dieBody);
+    dieBody.addEventListener('sleep',()=>{ if(rolling) finalize(); });
+    ray=new TH.Raycaster(); ptr=new TH.Vector2(); dragPlane=new TH.Plane(new TH.Vector3(0,1,0),-(HS+0.4)); vel=new CN.Vec3();
+    bindPointer(st); window.addEventListener('resize',onResize); loop();
+  }
+
+  function planePt(e){ const st=stage(), r=st.getBoundingClientRect(); ptr.x=((e.clientX-r.left)/r.width)*2-1; ptr.y=-((e.clientY-r.top)/r.height)*2+1; ray.setFromCamera(ptr,camera);
+    const p=new TH.Vector3(); if(!ray.ray.intersectPlane(dragPlane,p)) return null; const L=TRAY-HS; p.x=Math.max(-L,Math.min(L,p.x)); p.z=Math.max(-L,Math.min(L,p.z)); return p; }
+  function bindPointer(st){
+    st.addEventListener('pointerdown',e=>{ if(!ready) return; ptr.x=((e.clientX-st.getBoundingClientRect().left)/st.clientWidth)*2-1; ptr.y=-((e.clientY-st.getBoundingClientRect().top)/st.clientHeight)*2+1; ray.setFromCamera(ptr,camera);
+      if(!ray.intersectObject(dieMesh).length) return; grabbing=true; rolling=false; st.classList.add('grabbing'); st.setPointerCapture&&st.setPointerCapture(e.pointerId);
+      dieBody.type=CN.Body.KINEMATIC; dieBody.allowSleep=false; dieBody.wakeUp&&dieBody.wakeUp(); dieBody.velocity.set(0,0,0); dieBody.angularVelocity.set(0,0,0);
+      lastP=planePt(e)||new TH.Vector3(0,0,0); lastT=performance.now(); vel.set(0,0,0); });
+    st.addEventListener('pointermove',e=>{ if(!grabbing) return; const p=planePt(e); if(!p) return; const now=performance.now(), dt=Math.max(16,now-lastT)/1000;
+      vel.set((p.x-lastP.x)/dt,0,(p.z-lastP.z)/dt); dieBody.position.set(p.x,HS+0.4,p.z); dieBody.angularVelocity.set((Math.random()-.5)*6,(Math.random()-.5)*6,(Math.random()-.5)*6); lastP=p; lastT=now; });
+    const release=e=>{ if(!grabbing) return; grabbing=false; stage().classList.remove('grabbing'); dieBody.type=CN.Body.DYNAMIC; dieBody.allowSleep=true; dieBody.wakeUp&&dieBody.wakeUp();
+      const sp=Math.hypot(vel.x,vel.z); begin(curN); dieBody.velocity.set(vel.x*1.15, 2.2+Math.random()*1.6, vel.z*1.15);
+      const k=sp<1?14:20; dieBody.angularVelocity.set((Math.random()-.5)*k,(Math.random()-.5)*k,(Math.random()-.5)*k); };
+    st.addEventListener('pointerup',release); st.addEventListener('pointercancel',release);
+  }
+
+  function begin(n){ curN=n; result=1+Math.floor(Math.random()*n); paintAll(n); rolling=true; lowT=0; failT=performance.now()+5200; }
+  function roll(n){ if(failed) return; if(!ready){ pending=n; init(); return; } grabbing=false;
+    dieBody.type=CN.Body.DYNAMIC; dieBody.allowSleep=true; dieBody.wakeUp&&dieBody.wakeUp();
+    dieBody.position.set((Math.random()-.5)*1.6,2.7,(Math.random()-.5)*1.6); begin(n);
+    dieBody.velocity.set((Math.random()-.5)*5,-1.5,(Math.random()-.5)*5); dieBody.angularVelocity.set((Math.random()-.5)*22,(Math.random()-.5)*22,(Math.random()-.5)*22); }
+  function preview(n){ if(ready){ curN=n; paintAll(n); } else curN=n; }
+
+  function finalize(){ if(!rolling) return; rolling=false;
+    let best=-2,bi=2,q=dieMesh.quaternion; UPN.forEach((nr,i)=>{ const v=new TH.Vector3(nr[0],nr[1],nr[2]).applyQuaternion(q); if(v.y>best){best=v.y;bi=i;} });
+    faceVal[bi]=result; drawFace(bi,result,true);
+    const o=$('dice3dOut'); if(o)o.textContent=result; const c=$('dice3dCtx'); if(c)c.textContent=curN===10?(result<=3?'villain':(result>=8?'paragon':'unproven')):''; }
+
+  function onResize(){ if(!renderer) return; const st=stage(); if(!st.clientWidth) return; renderer.setSize(st.clientWidth,st.clientHeight); camera.aspect=st.clientWidth/st.clientHeight; camera.updateProjectionMatrix(); }
+  function loop(){ requestAnimationFrame(loop); world.step(1/60); dieMesh.position.copy(dieBody.position); dieMesh.quaternion.copy(dieBody.quaternion);
+    if(rolling&&!grabbing){ const sp=Math.hypot(dieBody.velocity.x,dieBody.velocity.y,dieBody.velocity.z)+Math.hypot(dieBody.angularVelocity.x,dieBody.angularVelocity.y,dieBody.angularVelocity.z);
+      if(sp<0.3){ lowT+=1/60; if(lowT>0.5) finalize(); } else lowT=0; if(performance.now()>failT) finalize(); }
+    renderer.render(scene,camera); }
+
+  return { init, roll, preview };
+})();
+window.Dice3D=Dice3D;
+(function wireDice3D(){
+  const t=document.getElementById('dice3dType'), r=document.getElementById('dice3dRoll'), st=document.getElementById('dice3dStage');
+  if(r) r.onclick=()=>Dice3D.roll(+(t?t.value:6));
+  if(t) t.onchange=()=>Dice3D.preview(+t.value);
+  if(st) st.addEventListener('pointerdown',()=>Dice3D.init(),{once:false});
+})();
 document.getElementById('clearLog').onclick=()=>{if(confirm('Clear the chronicle log? (Cards, panels, and world age are kept.)')){S.log=[];persist();renderLog();}};
 const today=()=>new Date().toISOString().slice(0,10);
 function dl(name,text,type){const b=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
@@ -2107,7 +2235,7 @@ document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim
 document.getElementById('setShape').onchange=e=>{ S.settings=S.settings||{}; S.settings.panelShape=e.target.value; mapViewInit=false; persist(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); };
 document.getElementById('setSkin').onchange=e=>{ S.settings=S.settings||{}; S.settings.cardSkin=e.target.value; applySkin(); persist(); };
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
-function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();}
+function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();if(v==='dice'&&window.Dice3D)setTimeout(()=>Dice3D.init(),30);}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 
 resetStage();
