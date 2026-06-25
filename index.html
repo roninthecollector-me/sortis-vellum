@@ -1532,11 +1532,12 @@ function showCard(c){
   if(defType==='grow' && !S.places.some(p=>p.kind==='settlement'&&tierIndex(p.tier)<POP_TIERS.length-1)) defType='place';
 
   const capInner = c.make ? makeForgeHTML() : `
-      <h4>Capture for the vault</h4>
+      <h4>Record this draw</h4>
       <div class="cap-row"><label>Capture as</label>
         <select id="capType">${CAP_TYPES.map(([v,l])=>`<option value="${v}" ${v===defType?'selected':''}>${l}</option>`).join('')}</select></div>
       <div id="capFields"></div>
-      <button class="cap-build" id="capBuild">Build note</button>
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.5px;color:var(--ash-dim);margin:2px 0 10px;line-height:1.55">Saved to your world (Atlas / Lore / Chronicle) when you press <b style="color:var(--gold)">Complete &amp; log</b> above. The button below is optional — it only builds the Obsidian markdown.</div>
+      <button class="cap-build" id="capBuild">Build vault note</button>
       <div class="cap-out" id="capOut">
         <div class="cap-title" id="capTitle"></div>
         <textarea id="capText" readonly></textarea>
@@ -1582,8 +1583,8 @@ function showCard(c){
     wireMakeForge();
   } else {
     renderCaptureFields(defType);
-    document.getElementById('capType').onchange=e=>{renderCaptureFields(e.target.value);document.getElementById('capOut').classList.remove('show');document.getElementById('capBuild').textContent = e.target.value==='event'?'Generate Vault Entry':'Build note';};
-    document.getElementById('capBuild').textContent = defType==='event'?'Generate Vault Entry':'Build note';
+    document.getElementById('capType').onchange=e=>{renderCaptureFields(e.target.value);document.getElementById('capOut').classList.remove('show');document.getElementById('capBuild').textContent='Build vault note';};
+    document.getElementById('capBuild').textContent='Build vault note';
     document.getElementById('capBuild').onclick=doBuildNote;
     document.getElementById('capObs').onclick=sendNoteToObsidian;
     document.getElementById('capCopy').onclick=()=>{const tx=document.getElementById('capText');tx.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}if(navigator.clipboard){navigator.clipboard.writeText(tx.value).catch(()=>{});ok=true;}document.getElementById('capMsg').textContent=ok?'Copied — paste into your vault.':'Select the text and copy.';};
@@ -1750,6 +1751,8 @@ function completeDraw(){
   current=null;
   persist();renderHeader();renderAtlas();renderLog();renderCodex();renderDeck();renderArchive();
   resetStage();
+  const where = codexId?'the Lore page':((cap&&cap.commit)?'the Atlas':'');
+  if(where) flag('recorded · '+where);
 }
 function resolveVolatile(c){
   if(Math.random()<0.60){                                   // 60% — settle one tier toward common (appears more often)
