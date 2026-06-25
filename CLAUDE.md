@@ -39,7 +39,8 @@ S = {
   heroes:  [ { name, alignment, status, born, panel } ],  // alignment 1–10, status alive|fallen
   rules:   [ { text, year } ],          // World Rules tome
   log:     [ { year, card, color, number, advanced, notes[] } ], // Chronicle
-  loreSeq: { "Yr1": n, ... }            // running lore counter per year
+  loreSeq: { "Yr1": n, ... },           // running lore counter per year
+  codex:   [ { id, type('lore'|'event'|'journal'), title, year, panel, theme?, outcome?, heroes?, body, ts } ]  // Lore Codex: authored prose, viewable in-app
 }
 ```
 
@@ -59,7 +60,8 @@ S = {
 - **Lore entries** auto-name `Yr{year}{coordNoSpace}-{n}`, where `n` is a single running counter per year across all panels (see `S.loreSeq`).
 - **Population tiers**: Camp 400 → Holdfast 800 → Reach 1200 → Bastion 2400.
 - **Capture → vault**: `buildNote(type)` returns `{ title, md, summary, commit? }`. `commitToWorld(commit)` writes the same record into `S` (panel/place/hero/rule). Note shapes are frontmatter + `# title` + `> summary line` + body.
-- **Obsidian workflow** (vault owns prose, app owns structure): per-note **Send to Obsidian** uses `obsidian://new` (`obsidianURL()`, routed by type to `Panels/`, `Heroes/`, etc.; journal appends to `Chronicle.md`); needs `S.settings.obsidianVault`. **Full vault export** (`buildVaultTextFiles()` + `fetchVaultImages()`) regenerates the structured skeleton from `S` with computed backlinks, embeds panel art, and writes a `World.md` **Dataview dashboard** — straight into a connected folder (File System Access API; handle persisted in IndexedDB) or a hand-rolled store-mode `.zip` (`zipStore()`, no dependency). Lore/event/journal prose is **not** stored in `S` — it lives only in the vault once sent. Keep generated frontmatter Dataview-friendly and consistent with the per-capture note shapes.
+- **Obsidian workflow** (vault owns prose, app owns structure): per-note **Send to Obsidian** uses `obsidian://new` (`obsidianURL()`, routed by type to `Panels/`, `Heroes/`, etc.; journal appends to `Chronicle.md`); needs `S.settings.obsidianVault`. **Full vault export** (`buildVaultTextFiles()` + `fetchVaultImages()`) regenerates the structured skeleton from `S` with computed backlinks, embeds panel art, and writes a `World.md` **Dataview dashboard** — straight into a connected folder (File System Access API; handle persisted in IndexedDB) or a hand-rolled store-mode `.zip` (`zipStore()`, no dependency). Keep generated frontmatter Dataview-friendly and consistent with the per-capture note shapes.
+- **Lore Codex** (`S.codex`): authored lore/event/journal prose IS now stored in `S` (it used to be vault-only). `buildNote()` returns a `codex` record for those types; `completeDraw` persists it (when the body is non-empty) and stamps the Chronicle entry's `codexId`. Read it in-app via the **Lore** tab (`renderCodex`) or by clicking a Chronicle entry → the reader modal (`openCodex`). The vault export includes these via `vaultCodexNotes()`, so vault + in-app stay in sync and Obsidian is optional.
 - **Eligibility**: heroes/events/terrain/art/etc. require ≥1 panel to exist (`eligible(card)`); only foundation/meta surface in an empty world.
 
 ### Storage tiers (in `Store` + cloud module)
