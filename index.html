@@ -1355,9 +1355,10 @@ function renderLog(){
   if(!S.log.length){list.innerHTML='<div class="empty">The chronicle is empty. Draw a card to begin the world.</div>';return;}
   list.innerHTML=S.log.slice().reverse().map(e=>{
     const notes=(e.notes||[]).map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
-    const has=e.codexId && (S.codex||[]).some(x=>x.id===e.codexId);
-    const read=has?`<button class="mini" data-cx="${e.codexId}" style="margin-top:7px">Read the writing ›</button>`:'';
-    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}${read}</div>`;
+    const cxe=e.codexId && (S.codex||[]).find(x=>x.id===e.codexId);
+    const snip=cxe?`<div class="log-note" style="font-style:italic;color:var(--bone-dim);margin-top:5px">“${esc((cxe.body||'').replace(/\s+/g,' ').trim().slice(0,90))}${(cxe.body||'').length>90?'…':''}”</div>`:'';
+    const read=cxe?`<button class="mini" data-cx="${e.codexId}" style="margin-top:7px">Read the writing ›</button>`:'';
+    return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${notes}${snip}${read}</div>`;
   }).join('');
   list.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>openCodex(b.dataset.cx));
 }
@@ -1671,7 +1672,7 @@ function renderCaptureFields(type){
     html = setts.length? `<div class="cap-row"><label>Settlement to grow</label><select id="capGrow">`+setts.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} · ${p.tier} → ${nextTier(p.tier)[0]}</option>`).join('')+`</select></div>` : `<div class="cap-row" style="font-family:var(--mono);font-size:11px;color:var(--ash-dim)">No settlements that can grow yet.</div>`;
   }
   else if(type==='hero'){const a=current&&current.lastRoll?current.lastRoll.value:'';html=txtRow('capName','Name','e.g. Vaelin Cross')+`<div class="cap-row"><label>Alignment (1 villain – 10 paragon)</label><input type="number" id="capAlign" min="1" max="10" value="${a}"></div>`+coordWidget();}
-  else if(type==='lore'){html=selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget()+`<div class="cap-row"><label>The lore — write it here to keep it in your world (and your vault)</label><textarea id="capLoreBody" placeholder="The story the tome tells…"></textarea></div>`;}
+  else if(type==='lore'){html=txtRow('capLoreTitle','Title (optional, auto-named if blank)','e.g. The Moon-Priests Rise')+selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget()+`<div class="cap-row"><label>The lore — write it here to keep it in your world (and your vault)</label><textarea id="capLoreBody" placeholder="The story the tome tells…"></textarea></div>`;}
   else if(type==='rule'){html=`<div class="cap-row"><label>The new rule</label><input type="text" id="capRule" placeholder="e.g. The year turns in three seasons."></div><div class="cap-row"><label>Elaboration (optional)</label><textarea id="capRuleBody" placeholder="How it works, what it means for the world…"></textarea></div>`;}
   else if(type==='event'){const o=current&&current.lastRoll?current.lastRoll.read:'';html=txtRow('capTitle','Event title','e.g. The Ashfall Reckoning')+coordWidget()+txtRow('capHeroes','Heroes involved (comma-separated, optional)','Vaelin Cross, Mara')+`<div class="cap-row"><label>What took place</label><input type="text" id="capOutcome" value="${o}" placeholder="A one-line summary"></div><div class="cap-row"><label>Detailed account</label><textarea id="capDetail" placeholder="The full account, as the explorer records it…"></textarea></div>`;}
   else if(type==='journal'){html=`<div class="cap-row"><label>Entry</label><textarea id="capBody" placeholder="The state of the world, as an observer…"></textarea></div>`;}
@@ -1700,9 +1701,9 @@ function buildNote(type){
     const title=text.replace(/[.?!]+$/,'').slice(0,48);
     const md=['---','type: rule','established: '+y2,'tags: [world-rule, year/'+y2+']','---','# '+title,'> A law of the world · established **Year '+y2+'**','',text].concat(body?['',body]:[]).concat(['']).join('\n');
     return {title,md,summary:'World rule: '+text,commit:{kind:'rule',text}};}
-  if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const body=val('capLoreBody')||'';const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title='Yr'+y+co.nospace+'-'+seq;
+  if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const body=val('capLoreBody')||'';const custom=val('capLoreTitle');const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title=custom||('Yr'+y+co.nospace+'-'+seq);
     const md=['---','type: lore','theme: '+theme,'year: '+y,'panel: "'+co.link+'"','tags: [lore, year/'+y+']','---','# '+title+' — '+theme,'> Discovered **Year '+y+'** on '+co.link,'',body||'*(the story the tome tells)*',''].join('\n');
-    return {title,md,summary:'Lore '+title+' ('+theme+')',seqKey:key,codex:{type:'lore',title,year:y,panel:co.pretty,theme,body}};}
+    const r={title,md,summary:'Lore '+title+' ('+theme+')',codex:{type:'lore',title,year:y,panel:co.pretty,theme,body}}; if(!custom) r.seqKey=key; return r;}
   if(type==='event'){const co=capCoord(),t=val('capTitle')||'An Event',outcome=val('capOutcome')||'';const rawDetail=val('capDetail');const detail=rawDetail||'*(what happened)*';const heroes=val('capHeroes').split(',').map(s=>s.trim()).filter(Boolean);const hL=heroes.map(h=>'[['+h+']]');
     const lines=['---','type: event','year: '+y,'panel: "'+co.link+'"'].concat(heroes.length?['heroes: ['+hL.map(h=>'"'+h+'"').join(', ')+']']:[]).concat(['tags: [event, year/'+y+']','---','# '+t,'> Year '+y+' · '+co.link+(outcome?' · '+outcome:'')]);
     if(heroes.length) lines.push('> Resolved by: '+hL.join(', '));
