@@ -480,6 +480,7 @@
       <select id="mapResSel" title="Export resolution" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="1800">Full res</option><option value="1000">Large</option><option value="550">Web</option></select>
       <select id="mapFmtSel" title="Export format" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="png">PNG</option><option value="jpeg">JPEG</option></select>
       <button class="mini" id="mapExport" title="Export the whole map as one image">Export map</button>
+      <button class="mini" id="mapTemplates" title="Download a blank panel template for every panel">All templates</button>
     </div>
     <div class="map-stage" id="mapStage"><div class="map-canvas" id="mapCanvas"></div></div>
   </section>
@@ -1354,6 +1355,11 @@ function downloadPanel(coord){
   const cv=drawPanelCanvas(p);
   cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='panel_'+coord.replace(/\s/g,'')+'_gen'+(p.gen||1)+'.png';a.click();},'image/png');
 }
+function downloadAllTemplates(){
+  if(!S.panels.length){ alert('No panels yet.'); return; }
+  S.panels.forEach((p,i)=>setTimeout(()=>downloadPanel(p.coord), i*250));   // stagger so the browser allows the batch
+  flag('downloading '+S.panels.length+' template'+(S.panels.length===1?'':'s')+'…');
+}
 
 /* ===== panel images + MAP viewer (Supabase Storage) ===== */
 function imagesEnabled(){ return !!(cloudReady && sbUser && sb); }
@@ -1566,6 +1572,7 @@ function initMapUI(){
   const range=document.getElementById('mapGenRange'); if(range) range.oninput=function(){ mapGen=+this.value; renderMap(); };
   const rv=document.getElementById('mapResetView'); if(rv) rv.onclick=()=>{ mapView={scale:1,x:0,y:0}; centerMap(); applyMapTransform(); };
   const mex=document.getElementById('mapExport'); if(mex) mex.onclick=exportMapImage;
+  const mtpl=document.getElementById('mapTemplates'); if(mtpl) mtpl.onclick=downloadAllTemplates;
   document.getElementById('lbClose').onclick=closeLightbox;
   document.getElementById('lbPrev').onclick=()=>{ if(lbState&&lbState.idx>0){ lbState.idx--; showLightboxImage(); } };
   document.getElementById('lbNext').onclick=()=>{ if(lbState&&lbState.idx<lbState.gens.length-1){ lbState.idx++; showLightboxImage(); } };
