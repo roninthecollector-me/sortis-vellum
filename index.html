@@ -91,6 +91,16 @@
   .cl-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px}
   .cl-items li{position:relative;padding-left:16px;font-size:14px;color:var(--ash);line-height:1.55}
   .cl-items li:before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;border-radius:50%;background:var(--ash-dim)}
+  /* collapsible Updates section (under Settings) */
+  .upd{border:1px solid var(--line);border-radius:8px;max-width:720px;margin-top:6px;overflow:hidden}
+  .upd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:11px;padding:14px 16px;font-family:var(--display);font-size:17px;color:var(--bone)}
+  .upd>summary::-webkit-details-marker{display:none}
+  .upd>summary .tag{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ash-dim)}
+  .upd>summary:hover .chev{color:var(--bone)}
+  .upd>summary .chev{margin-left:auto;font-size:18px;transition:transform .2s;color:var(--gold)}
+  .upd[open]>summary{color:var(--bone);border-bottom:1px solid var(--line)}
+  .upd[open]>summary .chev{transform:rotate(90deg)}
+  .upd .upd-body{padding:18px 16px 8px}
 
   /* travel + sectors banners */
   .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;width:330px;min-height:84px;margin-top:6px}
@@ -403,7 +413,6 @@
     <button class="tab" data-view="worldrules">The Tome</button>
     <button class="tab" data-view="dice">Dice</button>
     <button class="tab" data-view="rules">How To</button>
-    <button class="tab" data-view="updates">Updates</button>
     <button class="tab" data-view="settings">Settings</button>
   </nav>
 
@@ -683,13 +692,6 @@
     </div>
   </section>
 
-  <section class="view" id="v-updates">
-    <div style="font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash-dim);margin-bottom:2px">Changelog</div>
-    <div class="toolbar"><h2>Updates</h2></div>
-    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:620px;margin-top:-4px">Every patch we ship to The Sortis Vellum, newest first. We are building this in the open.</p>
-    <div class="changelog" id="changelogList"></div>
-  </section>
-
   <section class="view" id="v-settings">
     <div class="toolbar"><h2>Settings</h2></div>
 
@@ -770,6 +772,14 @@
     <div class="form" style="max-width:560px">
       <div style="font-size:13px;color:var(--ash);line-height:1.6">AI was used to build this tool. That is the full extent of its use here. No data is collected that we would ever share, your worlds and uploads remain entirely yours, and nothing you create is ever accessed by people or AI, or used to train AI models.</div>
     </div>
+
+    <details class="upd" style="margin-top:30px">
+      <summary>Updates<span class="tag">changelog</span><span class="chev">›</span></summary>
+      <div class="upd-body">
+        <p style="font-size:13px;color:var(--ash);line-height:1.55;margin:0 0 16px">Every patch we ship to The Sortis Vellum, newest first. We are building this in the open.</p>
+        <div class="changelog" id="changelogList"></div>
+      </div>
+    </details>
   </section>
 </div>
 <div class="onb" id="onb">
