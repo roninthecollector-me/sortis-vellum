@@ -71,6 +71,11 @@
   .deck-mark .small{font-family:var(--mono);font-size:10px;letter-spacing:4px;text-transform:uppercase;margin-top:8px;color:var(--ash-dim)}
   .working{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--ash);margin-top:14px;text-transform:uppercase}
   .working b{color:var(--verd)}
+  /* sub-tabs (Deck → Cards / Forge / Retired) */
+  .subtabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .subtab{font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:9px 15px;background:none;border:none;border-bottom:2px solid transparent;color:var(--ash);cursor:pointer;margin-bottom:-1px}
+  .subtab:hover{color:var(--bone)}
+  .subtab.active{color:var(--gold);border-bottom-color:var(--gold)}
 
   /* travel + sectors banners */
   .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;width:330px;min-height:84px;margin-top:6px}
@@ -378,11 +383,9 @@
     <button class="tab" data-view="atlas">Atlas</button>
     <button class="tab" data-view="map">Map</button>
     <button class="tab" data-view="deck">Deck</button>
-    <button class="tab" data-view="forge">Forge a Card</button>
-    <button class="tab" data-view="archive">Retired</button>
     <button class="tab" data-view="chron">Chronicle</button>
     <button class="tab" data-view="lore">Lore</button>
-    <button class="tab" data-view="worldrules">World Rules</button>
+    <button class="tab" data-view="worldrules">The Tome</button>
     <button class="tab" data-view="dice">Dice</button>
     <button class="tab" data-view="rules">How To</button>
     <button class="tab" data-view="settings">Settings</button>
@@ -464,12 +467,19 @@
   </div>
 
   <section class="view" id="v-deck">
-    <div class="toolbar"><h2>The Deck</h2><div class="filterbar" id="deckFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
-    <input type="text" id="deckSearch" placeholder="Search cards — name, keyword, trait…" style="width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:14px;padding:10px 12px;border-radius:5px;margin-bottom:14px">
-    <div id="deckList"></div>
-  </section>
+    <div class="subtabs" id="deckSubtabs">
+      <button class="subtab active" data-sub="cards">Cards</button>
+      <button class="subtab" data-sub="forge">Forge a Card</button>
+      <button class="subtab" data-sub="retired">Retired</button>
+    </div>
 
-  <section class="view" id="v-forge">
+    <div class="subpane" id="deck-cards">
+      <div class="toolbar"><h2>The Deck</h2><div class="filterbar" id="deckFilters" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+      <input type="text" id="deckSearch" placeholder="Search cards — name, keyword, trait…" style="width:100%;background:var(--ink);border:1px solid var(--line);color:var(--bone);font-family:var(--body);font-size:14px;padding:10px 12px;border-radius:5px;margin-bottom:14px">
+      <div id="deckList"></div>
+    </div>
+
+    <div class="subpane" id="deck-forge" style="display:none">
     <div class="toolbar"><h2 id="forgeTitle">Forge a Card</h2></div>
     <div class="form">
       <div class="field"><label>Title</label><input type="text" id="fTitle" placeholder="e.g. Spreading Wood"></div>
@@ -519,11 +529,12 @@
       </div>
       <div style="display:flex;gap:10px"><button class="btn" id="forgeSave">Add to the deck</button><button class="btn ghost" id="forgeReset">Clear</button></div>
     </div>
-  </section>
+    </div>
 
-  <section class="view" id="v-archive">
-    <div class="toolbar"><h2>Retired Cards</h2></div>
-    <div id="archiveList"></div>
+    <div class="subpane" id="deck-retired" style="display:none">
+      <div class="toolbar"><h2>Retired Cards</h2></div>
+      <div id="archiveList"></div>
+    </div>
   </section>
 
   <section class="view" id="v-chron">
@@ -556,17 +567,23 @@
   </section>
 
   <section class="view" id="v-worldrules">
-    <div class="toolbar"><h2>World Rules</h2><span class="pill" id="ruleCount"></span></div>
-    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:600px;margin-top:-4px">The laws of your world — what is simply <i>true</i> here. Magic, gods, the shape of the year, the fate of the dead. Add them as the deck reveals them, or whenever you decide.</p>
-    <div class="form" style="max-width:600px;margin-bottom:16px">
-      <div class="field" style="margin:0"><label>New rule</label>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="newRule" placeholder="e.g. The year turns in three seasons." style="flex:1">
-          <button class="btn" id="addRule">Add to the tome</button>
-        </div>
+    <div class="toolbar"><h2>The Tome</h2><span class="pill" id="tomeCount"></span></div>
+    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:620px;margin-top:-4px">Everything that is simply <i>true</i> in your world: its laws, its gods, its peoples, its living things. Add canon as it comes to you. Each entry is also written into the Chronicle.</p>
+
+    <h3 class="sec" id="tmFormTitle">Add to the Tome</h3>
+    <div class="form" style="max-width:600px">
+      <div class="split2">
+        <div class="field"><label>Category</label><select id="tmCat"></select></div>
+        <div class="field"><label>Year (optional)</label><input type="number" id="tmYear" min="0"></div>
       </div>
+      <div class="field"><label>Name / title</label><input type="text" id="tmTitle" placeholder=""></div>
+      <div class="field"><label>Description</label><textarea id="tmBody" placeholder=""></textarea></div>
+      <div style="display:flex;gap:10px"><button class="btn" id="tmAdd" style="flex:1">Inscribe in the Tome</button><button class="btn ghost" id="tmCancel" style="display:none">Cancel edit</button></div>
     </div>
-    <div id="ruleList"></div>
+
+    <h3 class="sec">The canon</h3>
+    <div class="filterbar" id="tomeFilters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <div id="tomeList"></div>
   </section>
 
   <section class="view" id="v-dice">
@@ -610,7 +627,7 @@
         <li><span class="tag cat">Discovery</span> Unearths tomes and relics from the old world, feeding the Lore Book.</li>
         <li><span class="tag cat gold">Hero</span> Births, activates, and falls heroes (and villains). Needs a panel to be born on.</li>
         <li><span class="tag cat">Event</span> Something befalls the current panel — resolved with the living heroes there.</li>
-        <li><span class="tag cat">Lore</span> Stops the action so you can write — journal entries, history, legends, myths, tragedies, religions, otherworldly events, and new <b>world rules</b> (which collect in the World Rules tome).</li>
+        <li><span class="tag cat">Lore</span> Stops the action so you can write: journal entries, history, legends, myths, tragedies, religions, otherworldly events, and new <b>canon</b> (which collects in the Tome).</li>
         <li><span class="tag cat">Meta</span> Rewrites the deck itself — retire, edit, or forge cards.</li>
         <li><span class="tag cat">Force</span> Cataclysm. Offstage for now; add it when you're ready.</li>
       </ul>
@@ -829,7 +846,7 @@ const QUOTES=[
   "The hand that hesitates still has to move first.",
 ];
 function pickQuote(){const q=document.getElementById('drawQuote');if(q)q.textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];}
-const CAP_TYPES=[['none','— log only —'],['panel','Panel'],['place','Place'],['grow','Grow a settlement'],['hero','Hero'],['lore','Lore entry'],['rule','World rule'],['event','Event (major)'],['journal','Journal entry']];
+const CAP_TYPES=[['none','— log only —'],['panel','Panel'],['place','Place'],['grow','Grow a settlement'],['hero','Hero'],['lore','Lore entry'],['rule','Tome entry'],['event','Event (major)'],['journal','Journal entry']];
 function capDefault(cat){return ({foundation:'panel',terrain:'none',develop:'place',art:'none',discovery:'lore',hero:'hero',event:'event',lore:'journal',meta:'none',force:'event'})[cat]||'none';}
 function tierIndex(n){return POP_TIERS.findIndex(t=>t[0]===n);}
 function nextTier(n){const i=tierIndex(n);return i>=0&&i<POP_TIERS.length-1?POP_TIERS[i+1]:POP_TIERS[i];}
@@ -888,7 +905,7 @@ function seedDeck(){
     c("Shuffle","meta",0,"black","Shuffle the deck. The order means nothing here, but the gesture matters.",{traits:['meta']}),
 
     c("Chronicle","lore",1,"black","Step back as an observer. Write a journal entry on the state of the world this year.",{traits:['lore']}),
-    c("A New Law of the World","lore",1,"red","Establish a new rule of this world: magic, gods, the shape of the year, the seasons, the fate of the dead. Add it to the World Rules.",{cap:'rule'}),
+    c("A New Law of the World","lore",1,"red","Establish a new truth of this world: a law, a god, a people, a creature, a magic. Add it to the Tome.",{cap:'rule'}),
     c("A Page of History","lore",1,"black","Set down a new piece of history. If the world is too young for history, write a piece of lore instead.",{traits:['lore'],cap:'lore'}),
     c("A Religion Takes Hold","lore",1,"red","A new faith comes into being. Write its basic lore: its god or gods, its tenets, its faithful.",{traits:['lore'],cap:'lore'}),
     c("A Legend Is Told","lore",1,"black","Write a legend for the lore books: a tale grown larger than the truth that birthed it.",{traits:['lore'],cap:'lore'}),
@@ -939,6 +956,8 @@ function migrateCards(){
       c.instruction = seedInstr[c.title] || c.instruction.replace(/\s*—\s*/g,': ');
     }
   });
+  // The Tome: migrate old { text, year } world-rules into structured canon entries (idempotent)
+  S.rules = (S.rules||[]).map(r=> (r && r.cat) ? r : { id:'tm'+uid(), ts:(r&&r.ts)||Date.now(), cat:'law', title:((r&&(r.title||r.text))||'').toString().slice(0,120), body:(r&&r.body)||'', year:(r&&r.year)||0 });
 }
 
 /* ===== Cloud sync (Supabase) — optional, degrades to local-only ===== */
@@ -1041,17 +1060,102 @@ function normCoord(nm,nd,em,ed){ if(nm===0)nd='N'; if(em===0)ed='E'; const prett
 function capCoord(){ return normCoord(Math.max(0,parseInt(val('capNsMag'))||0),val('capNsDir')||'N',Math.max(0,parseInt(val('capEwMag'))||0),val('capEwDir')||'E'); }
 
 /* ===== render shell ===== */
-function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderCodex();renderWorldRules();renderObsidian();}
-function renderWorldRules(){
-  const list=document.getElementById('ruleList'); if(!list) return;
-  document.getElementById('ruleCount').textContent = S.rules.length? (S.rules.length+(S.rules.length===1?' rule':' rules')) : 'empty';
-  list.innerHTML = S.rules.length ? S.rules.map((r,i)=>`
-    <div class="row">
-      <div class="rnum" style="color:var(--gold)">§</div>
-      <div><div class="rtitle" style="font-size:15px">${esc(r.text)}</div><div class="rmeta">established Year ${r.year}</div></div>
-      <div class="rowacts"><button class="mini danger" data-rrm="${i}">Remove</button></div>
-    </div>`).join('') : '<div class="empty">No world rules yet. The world is still deciding what it is.</div>';
-  list.querySelectorAll('[data-rrm]').forEach(b=>b.onclick=()=>{if(confirm('Remove this world rule?')){S.rules.splice(+b.dataset.rrm,1);persist();renderWorldRules();}});
+function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderCodex();renderTome();renderObsidian();}
+
+/* ===== THE TOME — the world's canon (laws, characters, gods, magic, factions, the living world, environment) ===== */
+const TOME_CATS=[
+  ['law','Laws','e.g. The year turns in three seasons','Fundamental truths with no better home: time, death, the shape of the year, the bones of the cosmos.'],
+  ['character','Characters','e.g. The Observer','Notable mortal figures: the Observer, rulers, founders, anyone whose name the world remembers.'],
+  ['god','Gods & Pantheons','e.g. The Drowned King, or the Tidal Pantheon','Deities and their groupings: a single god, or a whole pantheon and how it is worshipped.'],
+  ['magic','Magic','e.g. Tidecalling','How magic works here: its sources, its limits, and who is able to wield it.'],
+  ['faction','Factions','e.g. The Salt Wardens','Nations, orders, cults, guilds, any organized power that moves through the world.'],
+  ['life','The Living World','e.g. Ashwood, or the Pale Stag','the living world; plants, creatures, continents, beasts, etc'],
+  ['env','Environment','e.g. The Three Moons','Sky, stars, weather, climate, and the strange quirks of this world (floating continents, endless night).'],
+];
+const TOME_GLYPH={law:'§',character:'☉',god:'✦',magic:'✷',faction:'⚑',life:'❧',env:'☾'};
+function tomeCat(k){ return TOME_CATS.find(c=>c[0]===k)||TOME_CATS[0]; }
+function tomeLabel(k){ return tomeCat(k)[1]; }
+let tomeFilter='all', editTomeId=null;
+function tomePlaceholders(){ const c=tomeCat(val('tmCat')||'law'); const t=document.getElementById('tmTitle'),b=document.getElementById('tmBody'); if(t)t.placeholder=c[2]; if(b)b.placeholder=c[3]; }
+function addTomeEntry(){
+  const title=val('tmTitle'); if(!title){ alert('Give it a name first.'); return; }
+  const cat=val('tmCat')||'law';
+  const yr=val('tmYear'); const year=yr===''?S.meta.year:Math.max(0,parseInt(yr)||0);
+  const body=val('tmBody');
+  if(editTomeId){
+    const e=(S.rules||[]).find(x=>x.id===editTomeId); if(!e){ cancelTomeEdit(); return; }
+    e.cat=cat; e.title=title; e.body=body; e.year=year;
+    const le=(S.log||[]).find(l=>l.tomeId===editTomeId && l.manual); if(le) le.year=year;
+    cancelTomeEdit(); persist(); renderTome(); renderLog(); flag('entry updated'); return;
+  }
+  const entry={ id:'tm'+uid(), ts:Date.now(), cat, title, body, year };
+  S.rules=S.rules||[]; S.rules.push(entry);
+  S.log=S.log||[]; S.log.push({ year, card:'Inscribed in the Tome', color:'', number:'', advanced:false, notes:[], tomeId:entry.id, manual:true });
+  setVal('tmTitle',''); setVal('tmBody','');
+  persist(); renderTome(); renderLog();
+  flag('added · the Tome + Chronicle');
+}
+function editTomeEntry(id){
+  const e=(S.rules||[]).find(x=>x.id===id); if(!e) return;
+  editTomeId=id;
+  setVal('tmCat',e.cat||'law'); setVal('tmTitle',e.title||''); setVal('tmBody',e.body||''); setVal('tmYear',e.year);
+  tomePlaceholders();
+  document.getElementById('tmAdd').textContent='Save changes';
+  document.getElementById('tmCancel').style.display='inline-block';
+  document.getElementById('tmFormTitle').textContent='Edit entry';
+  document.getElementById('tmFormTitle').scrollIntoView({block:'center'});
+}
+function cancelTomeEdit(){
+  editTomeId=null;
+  setVal('tmTitle',''); setVal('tmBody','');
+  document.getElementById('tmAdd').textContent='Inscribe in the Tome';
+  document.getElementById('tmCancel').style.display='none';
+  document.getElementById('tmFormTitle').textContent='Add to the Tome';
+}
+function deleteTomeEntry(id){
+  const e=(S.rules||[]).find(x=>x.id===id); if(!e) return;
+  if(!confirm('Delete this '+tomeLabel(e.cat)+' entry? This cannot be undone.')) return;
+  S.rules=(S.rules||[]).filter(x=>x.id!==id);
+  S.log=(S.log||[]).filter(l=>!(l.tomeId===id));   // remove its Chronicle line too
+  if(editTomeId===id) cancelTomeEdit();
+  persist(); renderTome(); renderLog();
+}
+function renderTome(){
+  const fb=document.getElementById('tomeFilters'); if(!fb) return;
+  const tm=S.rules||[];
+  const ty=document.getElementById('tmYear'); if(ty && document.activeElement!==ty && ty.value==='') ty.value=S.meta.year;
+  const cats=[['all','All']].concat(TOME_CATS.map(c=>[c[0],c[1]]));
+  fb.innerHTML=cats.map(([k,l])=>`<button class="tag ${tomeFilter===k?'gold':'cat'}" data-tf="${k}" style="cursor:pointer;background:none">${l}</button>`).join('');
+  fb.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{tomeFilter=b.dataset.tf;renderTome();});
+  const cnt=document.getElementById('tomeCount'); if(cnt) cnt.textContent=tm.length?(tm.length+(tm.length===1?' entry':' entries')):'empty';
+  const list=document.getElementById('tomeList'); if(!list) return;
+  const items=tm.filter(x=>tomeFilter==='all'||x.cat===tomeFilter).slice().reverse();
+  list.innerHTML=items.length?items.map(x=>{
+    const meta=[tomeLabel(x.cat),(x.year||x.year===0)?('Yr '+x.year):''].filter(Boolean).join(' · ');
+    const snip=(x.body||'').replace(/\s+/g,' ').trim().slice(0,140);
+    return `<div class="row" data-tm="${x.id}" style="cursor:pointer">
+      <div class="rnum" style="color:var(--gold)">${TOME_GLYPH[x.cat]||'§'}</div>
+      <div><div class="rtitle">${esc(x.title)}</div><div class="rmeta">${esc(meta)}</div>${snip?`<div class="rinstr">${esc(snip)}${(x.body||'').length>140?'…':''}</div>`:''}</div>
+      <div class="rowacts"><button class="mini" data-tedit="${x.id}">Edit</button><button class="mini danger" data-tdel="${x.id}">Delete</button></div></div>`;
+  }).join('') : '<div class="empty">The Tome is blank. Its laws, gods, peoples, and living things will gather here.</div>';
+  list.querySelectorAll('.row[data-tm]').forEach(el=>el.onclick=()=>openTome(el.dataset.tm));
+  list.querySelectorAll('[data-tedit]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); editTomeEntry(b.dataset.tedit); });
+  list.querySelectorAll('[data-tdel]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); deleteTomeEntry(b.dataset.tdel); });
+}
+function openTome(id){
+  const x=(S.rules||[]).find(e=>e.id===id); if(!x) return;
+  document.getElementById('cxrKind').textContent=tomeLabel(x.cat);
+  document.getElementById('cxrTitle').textContent=x.title;
+  document.getElementById('cxrMeta').textContent=[(x.year||x.year===0)?('Year '+x.year):''].filter(Boolean).join(' · ');
+  document.getElementById('cxrBody').textContent=(x.body||'').trim()||'(no description was written)';
+  document.getElementById('cxr').classList.add('show');
+  document.getElementById('cxrCopy').onclick=()=>{ const t=x.title+'\n\n'+(x.body||''); if(navigator.clipboard) navigator.clipboard.writeText(t).catch(()=>{}); document.getElementById('cxrCopy').textContent='Copied'; setTimeout(()=>{document.getElementById('cxrCopy').textContent='Copy text';},1200); };
+}
+function initTome(){
+  const sel=document.getElementById('tmCat'); if(sel){ sel.innerHTML=TOME_CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join(''); sel.onchange=tomePlaceholders; }
+  tomePlaceholders();
+  const a=document.getElementById('tmAdd'); if(a) a.onclick=addTomeEntry;
+  const c=document.getElementById('tmCancel'); if(c) c.onclick=cancelTomeEdit;
 }
 function renderHeader(){
   document.getElementById('worldName').textContent=S.meta.world;
@@ -1406,15 +1510,20 @@ function renderLog(){
   if(!S.log.length){list.innerHTML='<div class="empty">The chronicle is empty. Draw a card to begin the world.</div>';return;}
   list.innerHTML=S.log.slice().reverse().map(e=>{
     const cxe=e.codexId && (S.codex||[]).find(x=>x.id===e.codexId);
-    // for codex-linked entries, derive the title/theme line live (so edits reflect) and drop the stale stored one
-    const noteLines=cxe ? (e.notes||[]).filter(n=>!/^(Lore|Event|Journal)\b/i.test(n)) : (e.notes||[]);
+    const tme=e.tomeId && (S.rules||[]).find(x=>x.id===e.tomeId);
+    const linked=cxe||tme;
+    // for linked entries, derive the title line live (so edits reflect) and drop the stale stored summary
+    const noteLines=linked ? (e.notes||[]).filter(n=>!/^(Lore|Event|Journal|World rule|Tome)\b/i.test(n)) : (e.notes||[]);
     const notes=noteLines.map(n=>`<div class="log-note">${esc(n)}</div>`).join('');
-    const live=cxe?`<div class="log-note" style="color:var(--gold)">${esc(cap1(cxe.type))}: ${esc(cxe.title)}${cxe.theme?(' ('+esc(cxe.theme)+')'):''}${cxe.outcome?(' — '+esc(cxe.outcome)):''}</div>`:'';
-    const snip=cxe?`<div class="log-note" style="font-style:italic;color:var(--bone-dim);margin-top:5px">“${esc((cxe.body||'').replace(/\s+/g,' ').trim().slice(0,90))}${(cxe.body||'').length>90?'…':''}”</div>`:'';
-    const read=cxe?`<button class="mini" data-cx="${e.codexId}" style="margin-top:7px">Read the writing ›</button>`:'';
+    const label=cxe?cap1(cxe.type):(tme?tomeLabel(tme.cat):'');
+    const extra=cxe?((cxe.theme?(' ('+esc(cxe.theme)+')'):'')+(cxe.outcome?(' · '+esc(cxe.outcome)):'')):'';
+    const live=linked?`<div class="log-note" style="color:var(--gold)">${esc(label)}: ${esc(linked.title)}${extra}</div>`:'';
+    const hasBody=linked && (linked.body||'').trim().length>0;
+    const snip=hasBody?`<div class="log-note" style="font-style:italic;color:var(--bone-dim);margin-top:5px">“${esc((linked.body||'').replace(/\s+/g,' ').trim().slice(0,90))}${(linked.body||'').length>90?'…':''}”</div>`:'';
+    const read=hasBody?`<button class="mini" data-read="${cxe?'cx':'tm'}:${linked.id}" style="margin-top:7px">${cxe?'Read the writing ›':'Read it ›'}</button>`:'';
     return `<div class="log-entry ${e.advanced?'year':''}"><div class="log-yr">YR ${e.year}${e.color?' · '+e.color.toUpperCase()+' '+e.number:''}</div><div class="log-card">${esc(e.card)}</div>${live}${notes}${snip}${read}</div>`;
   }).join('');
-  list.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>openCodex(b.dataset.cx));
+  list.querySelectorAll('[data-read]').forEach(b=>b.onclick=()=>{ const k=b.dataset.read.slice(0,2), id=b.dataset.read.slice(3); if(k==='cx')openCodex(id); else openTome(id); });
 }
 
 /* ===== LORE CODEX ===== */
@@ -1739,7 +1848,7 @@ function renderCaptureFields(type){
   }
   else if(type==='hero'){const a=current&&current.lastRoll?current.lastRoll.value:'';html=txtRow('capName','Name','e.g. Vaelin Cross')+`<div class="cap-row"><label>Alignment (1 villain – 10 paragon)</label><input type="number" id="capAlign" min="1" max="10" value="${a}"></div>`+coordWidget();}
   else if(type==='lore'){html=txtRow('capLoreTitle','Title (optional, auto-named if blank)','e.g. The Moon-Priests Rise')+selRow('capTheme','Theme',THEMES,'Destruction')+coordWidget()+`<div class="cap-row"><label>The lore — write it here to keep it in your world (and your vault)</label><textarea id="capLoreBody" placeholder="The story the tome tells…"></textarea></div>`;}
-  else if(type==='rule'){html=`<div class="cap-row"><label>The new rule</label><input type="text" id="capRule" placeholder="e.g. The year turns in three seasons."></div><div class="cap-row"><label>Elaboration (optional)</label><textarea id="capRuleBody" placeholder="How it works, what it means for the world…"></textarea></div>`;}
+  else if(type==='rule'){html=`<div class="cap-row"><label>Category</label><select id="capRuleCat">${TOME_CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('')}</select></div><div class="cap-row"><label>Name / title</label><input type="text" id="capRule" placeholder="e.g. The Observer, or The year turns in three seasons"></div><div class="cap-row"><label>Description (optional)</label><textarea id="capRuleBody" placeholder="What it is, how it works, what it means for the world."></textarea></div>`;}
   else if(type==='event'){const o=current&&current.lastRoll?current.lastRoll.read:'';html=txtRow('capTitle','Event title','e.g. The Ashfall Reckoning')+coordWidget()+txtRow('capHeroes','Heroes involved (comma-separated, optional)','Vaelin Cross, Mara')+`<div class="cap-row"><label>What took place</label><input type="text" id="capOutcome" value="${o}" placeholder="A one-line summary"></div><div class="cap-row"><label>Detailed account</label><textarea id="capDetail" placeholder="The full account, as the explorer records it…"></textarea></div>`;}
   else if(type==='journal'){html=`<div class="cap-row"><label>Entry</label><textarea id="capBody" placeholder="The state of the world, as an observer…"></textarea></div>`;}
   else{html=`<div class="cap-row" style="color:var(--ash-dim);font-family:var(--mono);font-size:11px;letter-spacing:1px">No note — this draw is only logged to the Chronicle.</div>`;}
@@ -1763,10 +1872,9 @@ function buildNote(type){
     const moral=align<=3?'villain':(align>=8?'hero':'unproven'),read=align<=3?'a villain rises':(align>=8?'a paragon':'conflicted, unproven');
     const md=['---','type: hero','alignment: '+align,'status: alive','born: '+y,'panel: "'+co.link+'"','tags: [hero, '+moral+', status/alive, year/'+y+']','---','# '+name,'> Born **Year '+y+'** on '+co.link+' · alignment **'+align+' / 10** — '+read+'.','','*(notes)*',''].join('\n');
     return {title:name,md,summary:'Hero '+name+' born (align '+align+') on '+co.pretty,commit:{kind:'hero',name,alignment:align,coord:co.pretty}};}
-  if(type==='rule'){const text=val('capRule')||'A new law of the world';const body=val('capRuleBody')||'';const y2=current.year;
-    const title=text.replace(/[.?!]+$/,'').slice(0,48);
-    const md=['---','type: rule','established: '+y2,'tags: [world-rule, year/'+y2+']','---','# '+title,'> A law of the world · established **Year '+y2+'**','',text].concat(body?['',body]:[]).concat(['']).join('\n');
-    return {title,md,summary:'World rule: '+text,commit:{kind:'rule',text}};}
+  if(type==='rule'){const cat=val('capRuleCat')||'law';const title=(val('capRule')||'A new truth of the world').slice(0,120);const body=val('capRuleBody')||'';const y2=current.year;
+    const md=['---','type: tome','category: '+cat,'year: '+y2,'tags: [tome, '+cat+', year/'+y2+']','---','# '+title,'> '+tomeLabel(cat)+' · Year **'+y2+'**','',body||'*(no description yet)*',''].join('\n');
+    return {title,md,summary:tomeLabel(cat)+': '+title,tome:{cat,title,body,year:y2}};}
   if(type==='lore'){const co=capCoord(),theme=val('capTheme')||'Unknown';const body=val('capLoreBody')||'';const custom=val('capLoreTitle');const key='Yr'+y;const seq=((S.loreSeq&&S.loreSeq[key])||0)+1;const title=custom||('Yr'+y+co.nospace+'-'+seq);
     const md=['---','type: lore','theme: '+theme,'year: '+y,'panel: "'+co.link+'"','tags: [lore, year/'+y+']','---','# '+title+' — '+theme,'> Discovered **Year '+y+'** on '+co.link,'',body||'*(the story the tome tells)*',''].join('\n');
     const r={title,md,summary:'Lore '+title+' ('+theme+')',codex:{type:'lore',title,year:y,panel:co.pretty,theme,body}}; if(!custom) r.seqKey=key; return r;}
@@ -1806,19 +1914,20 @@ function completeDraw(){
   if(current.madeCard){current.notes.unshift('New law forged: “'+current.madeCard+'”');}
   if(!current.pendingCapture && !c.make){ const auto=autoCapture(); if(auto) current.pendingCapture=auto; }
   const cap=current.pendingCapture;
-  let codexId=null;
+  let codexId=null, tomeId=null;
   if(cap){
-    current.notes.unshift(cap.summary);
+    if(!cap.tome) current.notes.unshift(cap.summary);   // tome shows its title live in the Chronicle
     if(cap.seqKey){S.loreSeq=S.loreSeq||{};S.loreSeq[cap.seqKey]=((S.loreSeq[cap.seqKey])||0)+1;}
     commitToWorld(cap.commit);
     if(cap.codex && (cap.codex.body||'').trim()){ codexId='cx'+uid(); S.codex=S.codex||[]; S.codex.push(Object.assign({id:codexId,ts:Date.now()},cap.codex)); }
+    if(cap.tome){ tomeId='tm'+uid(); S.rules=S.rules||[]; S.rules.push(Object.assign({id:tomeId,ts:Date.now()},cap.tome)); }
   }
   if(c.volatile){ resolveVolatile(c); }   // Universal cards meet their 60/40 fate after you've used them
-  S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes,codexId});
+  S.log.push({year:current.year,card:c.title,color:c.color,number:c.number,advanced:current.advanced,notes:current.notes,codexId,tomeId});
   current=null;
-  persist();renderHeader();renderAtlas();renderLog();renderCodex();renderDeck();renderArchive();
+  persist();renderHeader();renderAtlas();renderLog();renderCodex();renderTome();renderDeck();renderArchive();
   resetStage();
-  const where = codexId?'the Lore page':((cap&&cap.commit)?'the Atlas':'');
+  const where = codexId?'the Lore page':(tomeId?'the Tome':((cap&&cap.commit)?'the Atlas':''));
   if(where) flag('recorded · '+where);
 }
 function resolveVolatile(c){
@@ -1842,7 +1951,6 @@ function commitToWorld(co){
   }
   else if(co.kind==='grow'){const p=S.places.find(x=>x.name===co.name);if(p){const[tn,tp]=nextTier(p.tier);p.tier=tn;p.pop=tp;}}
   else if(co.kind==='hero'){ S.heroes.push({name:co.name,alignment:co.alignment,status:'alive',born:current.year,panel:co.coord}); }
-  else if(co.kind==='rule'){ S.rules.push({text:co.text,year:current.year}); }
 }
 
 function resetStage(){
@@ -1850,7 +1958,7 @@ function resetStage(){
   if(!S.deck.length){
     stage.innerHTML=`<div class="empty" style="max-width:360px">Your deck is empty — a blank vellum. <b>Forge a Card</b> to begin, then return here to draw.</div>
       <button class="act year" id="goForge" style="margin-top:14px">Go to Forge a Card</button>`;
-    document.getElementById('goForge').onclick=()=>switchView('forge');
+    document.getElementById('goForge').onclick=()=>{switchView('deck');deckTab('forge');};
     return;
   }
   const firstRun=(S.meta.draws||0)===0 && !S.panels.length;
@@ -1880,7 +1988,7 @@ function editCard(id){const c=S.deck.find(x=>x.id===id);if(!c)return;editId=id;
   document.getElementById('tAdvance').checked=c.traits.includes('advance');document.getElementById('tLore').checked=c.traits.includes('lore');document.getElementById('tMeta').checked=c.traits.includes('meta');document.getElementById('tRoll').checked=!!c.roll;setVal('fRoll',c.roll||'');
   document.getElementById('tSpace').checked=!!c.space;document.getElementById('sectorRange').style.display=c.space?'grid':'none';setVal('fSmin',c.smin||1);setVal('fSmax',c.smax||80);
   setVal('fTier',c.tier||'uncommon');
-  document.getElementById('forgeTitle').textContent='Edit Card';switchView('forge');
+  document.getElementById('forgeTitle').textContent='Edit Card';switchView('deck');deckTab('forge');
 }
 function readForge(){const traits=[];if(document.getElementById('tAdvance').checked)traits.push('advance');if(document.getElementById('tLore').checked)traits.push('lore');if(document.getElementById('tMeta').checked)traits.push('meta');
   const space=document.getElementById('tSpace').checked;
@@ -1926,10 +2034,11 @@ function vaultPlaceNote(pl){
   return {path:'Places/'+safeName(pl.name)+'.md', md:L.join('\n')};
 }
 function vaultRuleNotes(){
-  return S.rules.map((r,i)=>{
-    const title=((r.text||'Rule').replace(/[.?!]+$/,'').slice(0,48))||('Rule '+(i+1));
-    const L=['---','type: rule','established: '+r.year,'tags: [world-rule, year/'+r.year+']','---','# '+title,'> A law of the world · established **Year '+r.year+'**','',r.text||'',''];
-    return {path:'World Rules/'+safeName(title)+'.md', md:L.join('\n')};
+  return (S.rules||[]).map((r,i)=>{
+    const cat=r.cat||'law';
+    const title=(r.title||r.text||'Entry').toString().slice(0,80)||('Entry '+(i+1));
+    const L=['---','type: tome','category: '+cat,'year: '+(r.year||0),'tags: [tome, '+cat+', year/'+(r.year||0)+']','---','# '+title,'> '+tomeLabel(cat)+' · Year **'+(r.year||0)+'**','',(r.body||'')||'*(no description)*',''];
+    return {path:'The Tome/'+safeName(title)+'.md', md:L.join('\n')};
   });
 }
 function vaultChronicle(){
@@ -1942,13 +2051,13 @@ function vaultWorldMOC(){
   const list=(arr,f)=>arr.length?arr.map(f):['- *(none yet)*'];
   const L=['---','type: world','world: "'+S.meta.world+'"','year: '+S.meta.year,'draws: '+S.meta.draws,'tags: [moc]','---',
     '# '+S.meta.world,
-    '> Year **'+S.meta.year+'** · '+S.panels.length+' panels · '+S.heroes.length+' heroes · '+S.places.length+' places · '+S.rules.length+' rules · '+S.meta.draws+' draws','',
+    '> Year **'+S.meta.year+'** · '+S.panels.length+' panels · '+S.heroes.length+' heroes · '+S.places.length+' places · '+(S.rules||[]).length+' tome entries · '+S.meta.draws+' draws','',
     '> [!info] This dashboard uses the **Dataview** plugin. Without it, scroll to the plain index below.','',
     '## Panels', dv('TABLE terrain, founded, generation FROM "Panels" SORT founded ASC'),
     '## Heroes', dv('TABLE alignment, status, born, panel FROM "Heroes" SORT alignment DESC'),
     '## Places', dv('TABLE kind, tier, population, panel FROM "Places" SORT founded ASC'),
     '## Lore by year', dv('TABLE theme, panel FROM "Lore" SORT year ASC'),
-    '## World rules', dv('LIST FROM "World Rules" SORT established ASC'),'',
+    '## The Tome', dv('TABLE category, year FROM "The Tome" SORT year ASC'),'',
     '---','## Index (no plugin needed)',
     '### Panels'].concat(list(S.panels,p=>'- [['+p.coord+']]'))
     .concat(['','### Heroes']).concat(list(S.heroes,h=>'- [['+h.name+']]'))
@@ -1992,7 +2101,7 @@ async function fetchVaultImages(){
 }
 
 // --- per-note "Send to Obsidian" via obsidian:// URI ---
-function obsFolderFor(type){ return ({panel:'Panels',place:'Places',hero:'Heroes',lore:'Lore',rule:'World Rules',event:'Events'})[type]||''; }
+function obsFolderFor(type){ return ({panel:'Panels',place:'Places',hero:'Heroes',lore:'Lore',rule:'The Tome',event:'Events'})[type]||''; }
 function obsidianURL(vault,note,type,content){
   if(note.append) return 'obsidian://new?vault='+encodeURIComponent(vault)+'&file='+encodeURIComponent('Chronicle')+'&append=true&content='+encodeURIComponent(content+'\n');
   const folder=obsFolderFor(type), file=(folder?folder+'/':'')+note.title;
@@ -2127,19 +2236,24 @@ document.getElementById('importFile').onchange=e=>{const f=e.target.files[0];if(
 
 document.getElementById('syncCards').onclick=syncStarterCards;
 document.getElementById('resetWorld').onclick=resetWorld;
-document.getElementById('addRule').onclick=()=>{const inp=document.getElementById('newRule');const t=inp.value.trim();if(!t)return;S.rules.push({text:t,year:S.meta.year});inp.value='';persist();renderWorldRules();};
-document.getElementById('newRule').onkeydown=e=>{if(e.key==='Enter')document.getElementById('addRule').click();};
 document.getElementById('setWorld').oninput=e=>{S.meta.world=e.target.value.trim()||'Untitled World';document.getElementById('worldName').textContent=S.meta.world;persist();};
 document.getElementById('setShape').onchange=e=>{ S.settings=S.settings||{}; S.settings.panelShape=e.target.value; mapViewInit=false; persist(); if(document.getElementById('v-map').classList.contains('active')) renderMap(); };
 document.getElementById('setSkin').onchange=e=>{ S.settings=S.settings||{}; S.settings.cardSkin=e.target.value; applySkin(); persist(); };
 document.getElementById('deckSearch').oninput=e=>{deckQuery=e.target.value.trim().toLowerCase();renderDeck();};
-function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();}
+function switchView(v){document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');if(v==='map')renderMap();if(v==='lore')renderCodex();if(v==='worldrules')renderTome();}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
+// Deck sub-tabs: Cards / Forge a Card / Retired
+function deckTab(name){
+  document.querySelectorAll('#deckSubtabs .subtab').forEach(b=>b.classList.toggle('active',b.dataset.sub===name));
+  ['cards','forge','retired'].forEach(n=>{ const el=document.getElementById('deck-'+n); if(el) el.style.display = n===name?'':'none'; });
+}
+document.querySelectorAll('#deckSubtabs .subtab').forEach(b=>b.onclick=()=>deckTab(b.dataset.sub));
 
 resetStage();
 initMapUI();
 initObsidianUI();
 initCodex();
+initTome();
 wireOnboard();
 boot();
 </script>
