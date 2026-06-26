@@ -452,6 +452,9 @@
       <input type="range" id="mapGenRange" min="1" max="1" step="1" value="1">
       <span id="mapGenVal" class="map-gen-val">—</span>
       <button class="mini" id="mapResetView" title="Reset pan &amp; zoom">Reset view</button>
+      <select id="mapResSel" title="Export resolution" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="1800">Full res</option><option value="1000">Large</option><option value="550">Web</option></select>
+      <select id="mapFmtSel" title="Export format" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="png">PNG</option><option value="jpeg">JPEG</option></select>
+      <button class="mini" id="mapExport" title="Export the whole map as one image">Export map</button>
     </div>
     <div class="map-stage" id="mapStage"><div class="map-canvas" id="mapCanvas"></div></div>
   </section>
@@ -1442,11 +1445,52 @@ async function showLightboxImage(){
   wrap.innerHTML = url ? '<img src="'+url+'" alt="'+esc(p.coord)+' gen '+gen+'">' : '<div class="loading">Could not load image</div>';
 }
 function closeLightbox(){ lbState=null; const lb=document.getElementById('lightbox'); lb.classList.remove('show'); document.getElementById('lbImgWrap').innerHTML=''; }
+// Export the whole map as one composited image (ported from Generations; uses Supabase signed URLs for art)
+async function svPanelBlob(rec){ if(!rec||!imagesEnabled()) return null; try{ const url=await signedUrl(rec.path); if(!url) return null; const r=await fetch(url); return r.ok?await r.blob():null; }catch(e){ return null; } }
+async function exportMapImage(){
+  if(!S.panels.length){ alert('No panels yet.'); return; }
+  const G=mapGen||maxGen();
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  const pos=S.panels.map(p=>{ const c=parseCoord(p.coord); const x=(c.ed==='W'?-c.em:c.em), y=-(c.nd==='S'?-c.nm:c.nm); minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y); return {p,x,y}; });
+  const cols=maxX-minX+1, rows=maxY-minY+1, AR=panelAspect();
+  const TARGET=parseInt(((document.getElementById('mapResSel')||{}).value))||1800;   // Full 1800 / Large 1000 / Web 550 px per panel
+  const MAXDIM=15000, MAXAREA=200e6, fPAD=0.12, fCAP=0.17, fGAP=0.006;
+  const wDen=2*fPAD+cols+(cols-1)*fGAP, hDen=2*fPAD+fCAP+AR*rows+(rows-1)*AR*fGAP;
+  let cw=Math.min(TARGET, MAXDIM/wDen, MAXDIM/hDen);
+  const aW=cw*wDen, aH=cw*hDen; if(aW*aH>MAXAREA) cw*=Math.sqrt(MAXAREA/(aW*aH));
+  cw=Math.max(80,Math.floor(cw));
+  const ch=Math.round(cw*AR), GAP=Math.max(2,Math.round(cw*fGAP)), PAD=Math.round(cw*fPAD), CAPH=Math.round(cw*fCAP);
+  const W=PAD*2+cols*cw+(cols-1)*GAP, H=PAD*2+CAPH+rows*ch+(rows-1)*GAP;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const ctx=cv.getContext('2d');
+  ctx.fillStyle='#1a1714'; ctx.fillRect(0,0,W,H);
+  flag('rendering map image…');
+  for(const {p,x,y} of pos){
+    const gx=PAD+(x-minX)*(cw+GAP), gy=PAD+CAPH+(y-minY)*(ch+GAP);
+    const ig=latestImageAtGen(p,G); let drew=false;
+    if(ig!=null){ const blob=await svPanelBlob(p.images[String(ig)]);
+      if(blob){ try{ const bm=await createImageBitmap(blob);
+        const s=Math.max(cw/bm.width, ch/bm.height), dw=bm.width*s, dh=bm.height*s, dx=gx+(cw-dw)/2, dy=gy+(ch-dh)/2;
+        ctx.save(); ctx.beginPath(); ctx.rect(gx,gy,cw,ch); ctx.clip(); ctx.drawImage(bm,dx,dy,dw,dh); ctx.restore(); drew=true; if(bm.close)bm.close();
+      }catch(e){} } }
+    if(!drew){ ctx.fillStyle='#242019'; ctx.fillRect(gx,gy,cw,ch); ctx.fillStyle='#5f594e'; ctx.font='600 '+Math.round(cw*0.12)+'px Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+cw/2,gy+ch/2); }
+    const th=Math.max(15,Math.round(cw*0.085)); ctx.font='600 '+Math.round(th*0.66)+'px monospace'; const tw=ctx.measureText(p.coord).width+12;
+    ctx.fillStyle='rgba(20,18,13,0.8)'; ctx.fillRect(gx+5,gy+ch-5-th,tw,th);
+    ctx.fillStyle='#c9a24b'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+11,gy+ch-5-th/2);
+  }
+  ctx.fillStyle='#e9e1d0'; ctx.font='600 '+Math.round(CAPH*0.42)+'px Georgia, serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(S.meta.world||'Map', PAD, PAD+CAPH*0.42);
+  ctx.fillStyle='#8a8174'; ctx.font='600 '+Math.round(CAPH*0.2)+'px monospace'; ctx.textAlign='right';
+  ctx.fillText('GENERATION '+G+'  ·  '+S.panels.length+' PANELS  ·  THE SORTIS VELLUM', W-PAD, PAD+CAPH*0.42);
+  const fmt=((document.getElementById('mapFmtSel')||{}).value)||'png';
+  const type=fmt==='jpeg'?'image/jpeg':'image/png', ext=fmt==='jpeg'?'jpg':'png';
+  cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(S.meta.world||'map').replace(/[\\/:*?"<>|]/g,'')+'-gen'+G+'.'+ext; a.click(); const mb=b.size/1048576; flag('exported · '+W+'×'+H+' · '+(mb>=1?mb.toFixed(1)+' MB':Math.round(b.size/1024)+' KB')); }, type, fmt==='jpeg'?0.92:undefined);
+}
 function initMapUI(){
   if(mapWired) return; mapWired=true;
   setupMapPanZoom();
   const range=document.getElementById('mapGenRange'); if(range) range.oninput=function(){ mapGen=+this.value; renderMap(); };
   const rv=document.getElementById('mapResetView'); if(rv) rv.onclick=()=>{ mapView={scale:1,x:0,y:0}; centerMap(); applyMapTransform(); };
+  const mex=document.getElementById('mapExport'); if(mex) mex.onclick=exportMapImage;
   document.getElementById('lbClose').onclick=closeLightbox;
   document.getElementById('lbPrev').onclick=()=>{ if(lbState&&lbState.idx>0){ lbState.idx--; showLightboxImage(); } };
   document.getElementById('lbNext').onclick=()=>{ if(lbState&&lbState.idx<lbState.gens.length-1){ lbState.idx++; showLightboxImage(); } };
