@@ -76,6 +76,21 @@
   .subtab{font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:9px 15px;background:none;border:none;border-bottom:2px solid transparent;color:var(--ash);cursor:pointer;margin-bottom:-1px}
   .subtab:hover{color:var(--bone)}
   .subtab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  /* Updates / changelog timeline */
+  .changelog{max-width:720px;margin-top:4px}
+  .cl-item{position:relative;padding:0 0 26px 26px;border-left:1px solid var(--line);margin-left:5px}
+  .cl-item:last-child{border-left-color:transparent;padding-bottom:6px}
+  .cl-dot{position:absolute;left:-5px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px var(--ink)}
+  .cl-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+  .cl-tag{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid var(--gold)}
+  .cl-tag.new{color:#1a1410;background:var(--gold)}
+  .cl-tag.polish{color:var(--gold);background:transparent}
+  .cl-date{font-family:var(--mono);font-size:11px;color:var(--ash)}
+  .cl-hash{font-family:var(--mono);font-size:11px;color:var(--ash-dim)}
+  .cl-title{font-family:var(--display);font-size:21px;color:var(--bone);margin:0 0 9px}
+  .cl-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px}
+  .cl-items li{position:relative;padding-left:16px;font-size:14px;color:var(--ash);line-height:1.55}
+  .cl-items li:before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;border-radius:50%;background:var(--ash-dim)}
 
   /* travel + sectors banners */
   .draw-meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;width:330px;min-height:84px;margin-top:6px}
@@ -388,6 +403,7 @@
     <button class="tab" data-view="worldrules">The Tome</button>
     <button class="tab" data-view="dice">Dice</button>
     <button class="tab" data-view="rules">How To</button>
+    <button class="tab" data-view="updates">Updates</button>
     <button class="tab" data-view="settings">Settings</button>
   </nav>
 
@@ -665,6 +681,13 @@
       <h3>The deck is alive</h3>
       <p>Meta cards retire, rewrite, and forge new cards — <b>New Law</b> even hands you a randomly-assigned kind, steps, and ink, and asks you to name the law. Nothing is lost: retired cards wait in <b>Retired</b>, ready to return. Over the years the deck drifts away from the one you started with, and you won't have decided that on purpose. That drift is the point.</p>
     </div>
+  </section>
+
+  <section class="view" id="v-updates">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash-dim);margin-bottom:2px">Changelog</div>
+    <div class="toolbar"><h2>Updates</h2></div>
+    <p style="font-size:13px;color:var(--ash);line-height:1.55;max-width:620px;margin-top:-4px">Every patch we ship to The Sortis Vellum, newest first. We are building this in the open.</p>
+    <div class="changelog" id="changelogList"></div>
   </section>
 
   <section class="view" id="v-settings">
@@ -1063,7 +1086,49 @@ function normCoord(nm,nd,em,ed){ if(nm===0)nd='N'; if(em===0)ed='E'; const prett
 function capCoord(){ return normCoord(Math.max(0,parseInt(val('capNsMag'))||0),val('capNsDir')||'N',Math.max(0,parseInt(val('capEwMag'))||0),val('capEwDir')||'E'); }
 
 /* ===== render shell ===== */
-function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderCodex();renderTome();renderObsidian();}
+function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();renderLog();renderCodex();renderTome();renderObsidian();renderChangelog();}
+
+/* ===== Updates / changelog (user-facing; newest first; prepend a new entry whenever we ship) ===== */
+const CHANGELOG=[
+  {date:'Jun 26, 2026',tag:'new',hash:'399edae',title:'Export your map as an image',items:[
+    'Compose your whole atlas into one image at the current generation.',
+    'Pick the resolution (Full, Large, or Web) and PNG or JPEG, so it stays light enough to share.']},
+  {date:'Jun 26, 2026',tag:'new',hash:'2ea87bd',title:'The Tome',items:[
+    "Your world's canon in seven categories: laws, characters, gods, magic, factions, the living world, and environment.",
+    'Every entry is also written into the Chronicle, with edit and delete kept in sync.',
+    'Forge a Card and Retired are now sub-tabs under Deck.']},
+  {date:'Jun 24, 2026',tag:'new',hash:'6b16527',title:'Cards flip in 3D',items:[
+    'Drawing a card flips the deck card over in 3D to reveal it.',
+    'The reveal glow is brighter now, tinted by the rarity you pulled.']},
+  {date:'Jun 24, 2026',tag:'new',hash:'862983e',title:'Card skins',items:[
+    'Restyle the card paper from Settings: Almanac, Clean Vellum, Foxed, or Cartographer.',
+    'A live preview shows the look before you commit.']},
+  {date:'Jun 24, 2026',tag:'new',hash:'5c5e699',title:'The Lore Codex',items:[
+    'Read your lore, events, and journals right in the app (no Obsidian required).',
+    'Add, edit, and delete entries from the Lore tab; each one shows in the Chronicle with a snippet and a Read button.']},
+  {date:'Jun 24, 2026',tag:'polish',hash:'a21b41a',title:'Clearer capture, cleaner copy',items:[
+    'It is now obvious what gets saved when you press Complete and log on a draw.',
+    'Tidied stray punctuation across the card text.']},
+  {date:'Jun 24, 2026',tag:'new',hash:'2875fca',title:'A gentler first run',items:[
+    'New worlds open with a short setup: name it, choose a panel shape, and keep or clear the starter deck.']},
+  {date:'Jun 21, 2026',tag:'new',hash:'555ccdf',title:'Obsidian export',items:[
+    'Send any note to Obsidian, or export your whole world as a structured vault with a dashboard.']},
+  {date:'Jun 21, 2026',tag:'new',hash:'23bbc39',title:'Card rarity',items:[
+    'Cards now carry rarity tiers with weighted draws.',
+    'A volatile Universal tier either settles toward common or burns out after you use it.']},
+  {date:'Jun 20, 2026',tag:'new',hash:'ea9f45c',title:'The Map',items:[
+    'Upload panel art and watch your atlas fill in.',
+    'A slider walks you through the generations of your world.']},
+  {date:'Jun 20, 2026',tag:'new',hash:'d7d7ce2',title:'Cloud sync',items:[
+    'Sign in to sync your world across every device.']},
+];
+function renderChangelog(){
+  const el=document.getElementById('changelogList'); if(!el) return;
+  el.innerHTML=CHANGELOG.map(e=>`<div class="cl-item"><span class="cl-dot"></span>
+    <div class="cl-head"><span class="cl-tag ${e.tag}">${e.tag}</span><span class="cl-date">${esc(e.date)}</span><span class="cl-hash">${esc(e.hash)}</span></div>
+    <div class="cl-title">${esc(e.title)}</div>
+    <ul class="cl-items">${e.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('');
+}
 
 /* ===== THE TOME — the world's canon (laws, characters, gods, magic, factions, the living world, environment) ===== */
 const TOME_CATS=[
