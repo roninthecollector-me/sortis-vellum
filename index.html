@@ -168,8 +168,9 @@
   body[data-skin="cartographer"] .card-face{--card-paper:linear-gradient(135deg,#eef1ea,#e1e6db);--card-edge:#bcc3b2;--card-ink:#1f2a33;--card-ink2:#36424c;--card-sub:#5b6a5e;--card-rule:#c4ccbf;--seal-edge:#b6bfac;
     --card-texture:repeating-linear-gradient(0deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px),repeating-linear-gradient(90deg,rgba(70,92,82,.13) 0 1px,transparent 1px 22px)}
 
-  /* ===== 3D card flip (CSS only, no deps) — back shows, then flips to the drawn face ===== */
-  .flip3d{perspective:1500px;width:300px;margin:14px auto 0}
+  /* ===== 3D card: tilt-to-cursor + flip + gilded foil (CSS only, no deps) ===== */
+  .card3d{perspective:1200px;width:300px;margin:14px auto 0}
+  .flip3d{width:300px;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .2s ease}
   .flip3d-inner{position:relative;width:300px;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.2,.78,.22,1)}
   .flip3d.revealed .flip3d-inner{transform:rotateY(180deg)}
   .flip3d-front,.flip3d-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
@@ -180,6 +181,16 @@
   .card-back{position:absolute;inset:0;border-radius:8px;border:none;
     background:linear-gradient(150deg,#332c22,#211c15);box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 0 0 1px #4a4030,inset 0 0 60px rgba(0,0,0,.4);
     display:flex;align-items:center;justify-content:center}
+  /* gilded foil: a warm glare follows the cursor on every card; a metallic sheen grows by rarity (red/black ink stays reserved — foil sits under the text) */
+  .card-face{--foil:0;--foil-c:rgba(201,162,75,.5)}
+  .card-face.tier-rare{--foil:.5;--foil-c:rgba(120,176,142,.6)}
+  .card-face.tier-fabled{--foil:.85;--foil-c:rgba(216,172,72,.72)}
+  .card-face.tier-universal{--foil:1;--foil-c:rgba(180,120,224,.72)}
+  .foil-lyr{position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:8px}
+  .foil-sheen{background:linear-gradient(115deg,transparent 32%,var(--foil-c) 46%,#fff6df 50%,var(--foil-c) 54%,transparent 68%);background-size:230% 230%;background-position:var(--mx,50%) var(--my,50%);mix-blend-mode:overlay;opacity:calc(var(--foil,0)*(0.10 + var(--active,0)*0.55));transition:opacity .3s ease}
+  .foil-glare{background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,247,224,.5),transparent 46%);mix-blend-mode:soft-light;opacity:calc(var(--active,0)*0.5);transition:opacity .3s ease}
+  .card-face>.card-num,.card-face>.card-head,.card-face>.card-title,.card-face>.card-instr,.card-face>.card-dir{position:relative;z-index:2}
+  @media (prefers-reduced-motion:reduce){ .flip3d{transition:none;transform:none} }
 
   /* Capture */
   .capture{width:320px;margin:14px auto 0;text-align:left;background:var(--soil);border:1px solid var(--line);border-radius:8px;padding:14px}
@@ -1841,10 +1852,13 @@ function showCard(c){
   stage.innerHTML=`
     <div class="working">Working <b>${esc(S.currentPanel||'— no panel yet —')}</b></div>
     <div class="draw-meta">${travelHtml}${sectorHtml}</div>
+    <div class="card3d" id="cardTilt">
     <div class="flip3d" id="flipCard">
       <div class="flip3d-inner">
         <div class="flip3d-back"><div class="card-back"><span class="deck-mark"><span class="big">✦</span><span class="small">Draw from the deck</span></span></div></div>
         <div class="card-face flip3d-front tier-${dt}${c.volatile?' volatile':''}">
+          <div class="foil-lyr foil-sheen" aria-hidden="true"></div>
+          <div class="foil-lyr foil-glare" aria-hidden="true"></div>
           <div class="card-num ${c.color}">${c.number}</div>
           <div class="card-head"><span class="card-seal">${CATLABEL[c.category]||c.category}</span><span class="card-rarity">${TIER_META[dt].label}</span></div>
           <div class="card-title">${esc(c.title)}</div>
@@ -1852,6 +1866,7 @@ function showCard(c){
           <div class="card-dir">${c.number} step${c.number==1?'':'s'} · ${c.color} · ${dir}${c.space?` · ${c.smin}–${c.smax} sectors`:''}</div>
         </div>
       </div>
+    </div>
     </div>
     <div class="card-actions">${extras}
       <button class="act done" id="aDone">Complete & log</button>
@@ -1862,6 +1877,15 @@ function showCard(c){
   // show the card back, then flip it over to reveal the drawn face
   const flip=document.getElementById('flipCard');
   if(flip) setTimeout(()=>flip.classList.add('revealed'),240);
+
+  // tilt-to-cursor + foil light (Foil-inspired): sets --rx/--ry (tilt) and --mx/--my/--active (light)
+  const tiltEl=document.getElementById('cardTilt');
+  if(tiltEl && !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    tiltEl.addEventListener('pointermove',e=>{ const r=tiltEl.getBoundingClientRect(); const px=(e.clientX-r.left)/r.width, py=(e.clientY-r.top)/r.height, T=9, s=tiltEl.style;
+      s.setProperty('--rx',((0.5-py)*T).toFixed(2)+'deg'); s.setProperty('--ry',((px-0.5)*T).toFixed(2)+'deg');
+      s.setProperty('--mx',(px*100).toFixed(1)+'%'); s.setProperty('--my',(py*100).toFixed(1)+'%'); s.setProperty('--active','1'); });
+    tiltEl.addEventListener('pointerleave',()=>{ const s=tiltEl.style; s.setProperty('--rx','0deg'); s.setProperty('--ry','0deg'); s.setProperty('--active','0'); });
+  }
 
   const rb=document.getElementById('resolveBox');
   if(effRoll){
