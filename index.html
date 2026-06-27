@@ -192,7 +192,8 @@
   .foil-lyr{position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:8px}
   .foil-sheen{background:linear-gradient(115deg,transparent 32%,var(--foil-c) 46%,#fff6df 50%,var(--foil-c) 54%,transparent 68%);background-size:230% 230%;background-position:var(--mx,50%) var(--my,50%);mix-blend-mode:overlay;opacity:calc(var(--foil,0)*(0.10 + var(--active,0)*0.55));transition:opacity .3s ease}
   .foil-glare{background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,247,224,.5),transparent 46%);mix-blend-mode:soft-light;opacity:calc(var(--active,0)*0.5);transition:opacity .3s ease}
-  .card-face>.card-num,.card-face>.card-head,.card-face>.card-title,.card-face>.card-instr,.card-face>.card-dir{position:relative;z-index:2}
+  .card-face>.card-head,.card-face>.card-title,.card-face>.card-instr,.card-face>.card-dir{position:relative;z-index:2}
+  .card-face>.card-num{z-index:2}   /* stays absolute top-right (from .card-num); just lift above the foil */
   @media (prefers-reduced-motion:reduce){ .flip3d{transition:none;transform:none} }
 
   /* Capture */
