@@ -90,6 +90,7 @@
   .cl-tag{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid var(--gold)}
   .cl-tag.new{color:#1a1410;background:var(--gold)}
   .cl-tag.polish{color:var(--gold);background:transparent}
+  .cl-by{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid var(--verd);color:var(--verd)}
   .cl-date{font-family:var(--mono);font-size:11px;color:var(--ash)}
   .cl-hash{font-family:var(--mono);font-size:11px;color:var(--ash-dim)}
   .cl-title{font-family:var(--display);font-size:21px;color:var(--bone);margin:0 0 9px}
@@ -1123,7 +1124,7 @@ function renderAll(){renderHeader();renderAtlas();renderDeck();renderArchive();r
 
 /* ===== Updates / changelog (user-facing; newest first; prepend a new entry whenever we ship) ===== */
 const CHANGELOG=[
-  {date:'Jun 27, 2026',tag:'new',hash:'ae6b34a',title:'A taller 9 x 12 panel shape',items:[
+  {date:'Jun 27, 2026',tag:'new',hash:'ae6b34a',by:'CarlCinco',title:'A taller 9 x 12 panel shape',items:[
     'Pick a 9 x 12 panel format in Settings, or when you start a new world, for taller portrait panels.']},
   {date:'Jun 27, 2026',tag:'new',hash:'b43d14e',title:'Cards catch the light',items:[
     'A drawn card now tilts toward your cursor, with a warm glare that follows the pointer across the paper.',
@@ -1149,6 +1150,8 @@ const CHANGELOG=[
   {date:'Jun 24, 2026',tag:'polish',hash:'a21b41a',title:'Clearer capture, cleaner copy',items:[
     'It is now obvious what gets saved when you press Complete and log on a draw.',
     'Tidied stray punctuation across the card text.']},
+  {date:'Jun 24, 2026',tag:'new',hash:'2875fca',by:'Crow',title:'Square and landscape panels',items:[
+    'Set your panel shape in Settings or at world setup: portrait, square (4x4), or landscape.']},
   {date:'Jun 24, 2026',tag:'new',hash:'2875fca',title:'A gentler first run',items:[
     'New worlds open with a short setup: name it, choose a panel shape, and keep or clear the starter deck.']},
   {date:'Jun 21, 2026',tag:'new',hash:'555ccdf',title:'Obsidian export',items:[
@@ -1165,7 +1168,7 @@ const CHANGELOG=[
 function renderChangelog(){
   const el=document.getElementById('changelogList'); if(!el) return;
   el.innerHTML=CHANGELOG.map(e=>`<div class="cl-item"><span class="cl-dot"></span>
-    <div class="cl-head"><span class="cl-tag ${e.tag}">${e.tag}</span><span class="cl-date">${esc(e.date)}</span><span class="cl-hash">${esc(e.hash)}</span></div>
+    <div class="cl-head"><span class="cl-tag ${e.tag}">${e.tag}</span><span class="cl-date">${esc(e.date)}</span><span class="cl-hash">${esc(e.hash)}</span>${e.by?`<span class="cl-by">Requested by ${esc(e.by)}</span>`:''}</div>
     <div class="cl-title">${esc(e.title)}</div>
     <ul class="cl-items">${e.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('');
 }
