@@ -495,6 +495,7 @@
       <button class="mini" id="mapResetView" title="Reset pan &amp; zoom">Reset view</button>
       <select id="mapResSel" title="Export resolution" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="1800">Full res</option><option value="1000">Large</option><option value="550">Web</option></select>
       <select id="mapFmtSel" title="Export format" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ash)"><option value="png">PNG</option><option value="jpeg">JPEG</option></select>
+      <label title="Show panel coordinates on the exported image" style="font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="mapCoordsSel" checked style="accent-color:var(--gold);width:auto;margin:0"> Coords</label>
       <button class="mini" id="mapExport" title="Export the whole map as one image">Export map</button>
       <button class="mini" id="mapTemplates" title="Download a blank panel template for every panel">All templates</button>
     </div>
@@ -1571,6 +1572,7 @@ async function exportMapImage(){
   const pos=S.panels.map(p=>{ const c=parseCoord(p.coord); const x=(c.ed==='W'?-c.em:c.em), y=-(c.nd==='S'?-c.nm:c.nm); minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y); return {p,x,y}; });
   const cols=maxX-minX+1, rows=maxY-minY+1, AR=panelAspect();
   const TARGET=parseInt(((document.getElementById('mapResSel')||{}).value))||1800;   // Full 1800 / Large 1000 / Web 550 px per panel
+  const coords=document.getElementById('mapCoordsSel') ? document.getElementById('mapCoordsSel').checked : true;
   const MAXDIM=15000, MAXAREA=200e6, fPAD=0.12, fCAP=0.17, fGAP=0.006;
   const wDen=2*fPAD+cols+(cols-1)*fGAP, hDen=2*fPAD+fCAP+AR*rows+(rows-1)*AR*fGAP;
   let cw=Math.min(TARGET, MAXDIM/wDen, MAXDIM/hDen);
@@ -1589,10 +1591,10 @@ async function exportMapImage(){
         const s=Math.max(cw/bm.width, ch/bm.height), dw=bm.width*s, dh=bm.height*s, dx=gx+(cw-dw)/2, dy=gy+(ch-dh)/2;
         ctx.save(); ctx.beginPath(); ctx.rect(gx,gy,cw,ch); ctx.clip(); ctx.drawImage(bm,dx,dy,dw,dh); ctx.restore(); drew=true; if(bm.close)bm.close();
       }catch(e){} } }
-    if(!drew){ ctx.fillStyle='#242019'; ctx.fillRect(gx,gy,cw,ch); ctx.fillStyle='#5f594e'; ctx.font='600 '+Math.round(cw*0.12)+'px Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+cw/2,gy+ch/2); }
-    const th=Math.max(15,Math.round(cw*0.085)); ctx.font='600 '+Math.round(th*0.66)+'px monospace'; const tw=ctx.measureText(p.coord).width+12;
-    ctx.fillStyle='rgba(20,18,13,0.8)'; ctx.fillRect(gx+5,gy+ch-5-th,tw,th);
-    ctx.fillStyle='#c9a24b'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+11,gy+ch-5-th/2);
+    if(!drew){ ctx.fillStyle='#242019'; ctx.fillRect(gx,gy,cw,ch); if(coords){ ctx.fillStyle='#5f594e'; ctx.font='600 '+Math.round(cw*0.12)+'px Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+cw/2,gy+ch/2); } }
+    if(coords){ const th=Math.max(15,Math.round(cw*0.085)); ctx.font='600 '+Math.round(th*0.66)+'px monospace'; const tw=ctx.measureText(p.coord).width+12;
+      ctx.fillStyle='rgba(20,18,13,0.8)'; ctx.fillRect(gx+5,gy+ch-5-th,tw,th);
+      ctx.fillStyle='#c9a24b'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.coord,gx+11,gy+ch-5-th/2); }
   }
   ctx.fillStyle='#e9e1d0'; ctx.font='600 '+Math.round(CAPH*0.42)+'px Georgia, serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.fillText(S.meta.world||'Map', PAD, PAD+CAPH*0.42);
