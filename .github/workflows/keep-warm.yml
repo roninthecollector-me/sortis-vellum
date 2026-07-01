@@ -1,0 +1,26 @@
+name: Keep Supabase warm
+
+# Free-tier Supabase projects auto-pause after ~7 days with no database activity.
+# The Sortis Vellum is local-first (it only touches Supabase on cloud sign-in or
+# panel-image sync), so this light scheduled query keeps the project active.
+# The anon key is public-safe: it already ships in config.js and is protected by RLS.
+
+on:
+  schedule:
+    - cron: '23 7 */2 * *'   # every 2 days at 07:23 UTC (well inside the 7-day pause window)
+  workflow_dispatch: {}        # allow manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST (a real DB query keeps the project from pausing)
+        env:
+          SUPABASE_URL: https://mmxxxfdngriaogpejopi.supabase.co
+          SUPABASE_ANON: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1teHh4ZmRuZ3JpYW9ncGVqb3BpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5ODkxNDIsImV4cCI6MjA5NzU2NTE0Mn0.hwd9hJT48VP4XMlgFwpXQ6Lkgijs8hVoKYGN5bkpcdE
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON" -H "Authorization: Bearer $SUPABASE_ANON" \
+            "$SUPABASE_URL/rest/v1/worlds?select=user_id&limit=1")
+          echo "Supabase REST ping -> HTTP $code"
+          test "$code" = "200"
